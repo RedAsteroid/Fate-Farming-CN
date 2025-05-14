@@ -1,6 +1,8 @@
 # Fate Farming CN
 原作者库：https://github.com/pot0to/pot0to-SND-Scripts
 
+适配中国服务器客户端使用
+
 Fate farming 脚本具有以下功能：
 - 在双色宝石接近上限时，自动兑换两种新旧版本的 **「双色宝石收据」**
 - FATE 优先级系统: 额外奖励 > 最高进度 > 距离水晶最近的 FATE > 剩余时间 > 距离玩家最近的 FATE
