@@ -24,6 +24,7 @@ Fate farming 脚本具备以下功能：
 - SelectNextZone 方法添加更多防御性检测(似乎没用)
 - FATE 后处理任务添加延迟防止卡住
 - 增加部分 FATE 进行时卡死与部分寻路卡死时的脱困逻辑
+- 修改收集物品 FATE 提交物品数量（7 → 6）
 
 ##  Something Need Doing 插件入门（SND）
 ![SND Basics](img/1.png)
