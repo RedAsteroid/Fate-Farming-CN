@@ -62,7 +62,7 @@ Fate farming 脚本具有以下功能：
 |--|--|
 | ![RSR Engage Settings](img/31.png) | 无论您的职业是否为 Tank，都选择 "All Targets that are in range for any abilities (Tanks/Autoduty)" |
 | ![RSR Map Specific Priorities](img/32.png) | 将 **「迷失少女」** 和 **「迷失者」** 添加到 Prio Target 中 |
-| ![RSR Gap Closer Distance](img/33.png) | 推荐近战设置：gapcloser distance(最短接近距离) = 20y |
+| ![RSR Gap Closer Distance](img/33.png) | 推荐近战设置：gapcloser distance = 20y |
 
 ## 配套脚本
 配套脚本需与基础脚本 `Fate Farming.lua` 配合使用，可针对不同 FATE 伐木场景提供更精细的控制。
