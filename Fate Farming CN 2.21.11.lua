@@ -920,7 +920,7 @@ FatesData = {
                 { fateName="不甘的冲锋者——灰达奇", npcName="崇灵之民男性" }, --22 boss
                 { fateName="大湖之恋", npcName="崇灵之民渔夫" }, --24 tower defense
                 { fateName="蛇王得酷热涅：狩猎的杀手锏", npcName="夕阳尚红 布鲁克·瓦" }, -- need check
-                { fateName="神秘翼龙荒野奇谈", npcName="佩鲁佩鲁族的旅行商人" },
+                { fateName="神秘翼龙荒野奇谈", npcName="佩鲁佩鲁族旅行商人" }, --wiki 有误 wiki 有误 wiki 有误 wiki 有误
             },
             fatesWithContinuations = {},
             specialFates = {
