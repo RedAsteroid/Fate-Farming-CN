@@ -10,30 +10,27 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test3.8
+test3.9 
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
-        1. RSR/VBM/Wrath 循环功能可用性，我还没有用过这三个作为循环插件打 FATE
-        2. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格覆盖
-        3. FATE 中通过寻路接近敌人时，缺少寻路卡死检测，地形不佳的 FATE 会被石头等物体卡住无法脱离
-        4. 迷失少女刷新后距离远远超过射程/有地形阻挡会导致角色原地无任何动作
-        5. 启动脚本时，GetAetherytesInZone() 可能会执行失败，导致报错中止脚本运行或游戏崩溃，这个问题目前无法处理，每次运行脚本都有可能发生，使用多地图脚本更容易触发这个问题
+        1. 未测试 RSR/VBM/Wrath 循环功能可用性，我还没有用过这三个作为循环插件打 FATE
+        2. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
+        3. 启动脚本时，GetAetherytesInZone() 可能会执行失败，导致报错中止脚本运行或游戏崩溃，这个问题目前无法处理，每次运行脚本都有可能发生，使用多地图脚本更容易触发这个问题
 
 以下是相较于原版进行的修改：
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
     2. 修改 MinWait 和 MaxWait 默认值，减少 FATE 完成后的等待时间
     3. 额外奖励 FATE 提升为最高优先级
     4. 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
-    5. 修复 DownTimeWaitAtNearestAetheryte 相关方法无法在无 FATE 时回到以太之光的问题
+    5. 修复 DownTimeWaitAtNearestAetheryte 相关方法无法寻路到以太之光和寻路到以太之光模型内部的问题
     6. 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路
     7. 将 Retainers 默认设置为 false，如果您需要收雇员请手动改为 true
     8. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
     9. SelectNextZone 添加更多防御性检测(似乎没用)
     10. FATE 后处理任务添加延迟防止卡住
-    11. FATE 进行中追加超射程、有阻挡、寻路时卡住跳跃脱困的任务
-    12. 修改收集物品 FATE 提交物品数量（7 → 6）
+    11. FATE 进行期间，追加超出射程、目标有阻挡的接近逻辑，追加寻路卡住时跳跃脱困的任务
 
 【如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本】
 
@@ -113,7 +110,7 @@ ShouldSummonChocobo                 = true          --是否召唤陆行鸟搭�
     ResummonChocoboTimeLeft         = 5 * 60        --当陆行鸟搭档剩余时间少于这个秒数时重新召唤，避免在 FATE 中途消失。
     ChocoboStance                   = "治疗战术"      --可选指令: 跟随/自由战术/防护战术/治疗战术/进攻战术。
     ShouldAutoBuyGysahlGreens       = true          --当基萨尔野菜用完时，自动从利姆萨·罗敏萨的商人处购买99个基萨尔野菜。
-MountToUse                          = "专属陆行鸟"       --在 FATE 之间飞行时想要使用的坐骑
+MountToUse                          = "随机坐骑"       --在 FATE 之间飞行时想要使用的坐骑，填写"随机坐骑"则使用随机坐骑
 FatePriority                        = {"Bonus", "Progress", "DistanceTeleport", "TimeLeft", "Distance"} --FATE 优先级顺序
 
 --FATE 战斗设置
@@ -1598,8 +1595,8 @@ function FlyBackToAetheryte()
             State = CharacterState.ready
             LogInfo("[FATE] State Change: Ready")
         else
-            if MountToUse == "随机飞行坐骑" then
-                yield('/gaction "随机飞行坐骑"')
+            if MountToUse == "随机坐骑" then
+                yield('/gaction "随机坐骑"')
             else
                 yield('/mount "' .. MountToUse)
             end
@@ -1621,7 +1618,7 @@ function FlyBackToAetheryte()
             yield('/gaction 跳跃')
             yield('/wait 1')
             end
-            PathfindAndMoveTo(closestAetheryte.x, closestAetheryte.y, closestAetheryte.z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying)
+            PathfindAndMoveTo(closestAetheryte.x, closestAetheryte.y + 15, closestAetheryte.z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --追加高度修正 15y，防止寻路到水晶里面
         end
     end
 end
@@ -1632,8 +1629,8 @@ function Mount()
         State = CharacterState.moveToFate
         LogInfo("[FATE] State Change: MoveToFate")
     else
-        if MountToUse == "随机飞行坐骑" then
-            yield('/gaction "随机飞行坐骑"')
+        if MountToUse == "随机坐骑" then
+            yield('/gaction "随机坐骑"')
         else
             yield('/mount "' .. MountToUse)
         end
@@ -1924,7 +1921,7 @@ function CollectionsFateTurnIn()
             MoveToNPC()
         elseif (PathfindInProgress() or PathIsRunning()) then
             local now = os.clock()
-            if now - LastStuckCheckTime > 5 then -- 5 秒内移动距离小于 3 则执行接下来逻辑
+            if now - LastStuckCheckTime > 10 then -- 10 秒内移动距离小于 3 则执行接下来逻辑
                 local x = GetPlayerRawXPos()
                 local y = GetPlayerRawYPos()
                 local z = GetPlayerRawZPos()
@@ -1940,7 +1937,7 @@ function CollectionsFateTurnIn()
             end
         end
     else
-        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 6 then -- 修改默认值为6，因为单人数值下FATE仅需提交18个物品即完成，同时由于主动攻击导致收集到6个物品时往往仍处于战斗状态会获得比预期更多的物品
+        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回
             GotCollectionsFullCredit = true
         end
 
@@ -2330,7 +2327,7 @@ function DoFate()
         return
     elseif CurrentFate.isCollectionsFate then
         yield("/wait 1") -- needs a moment after start of fate for GetFateEventItem to populate
-        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 6 or (GotCollectionsFullCredit and GetFateProgress(CurrentFate.fateId) == 100) then --6个收集物品就尝试上交
+        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 or (GotCollectionsFullCredit and GetFateProgress(CurrentFate.fateId) == 100) then --撤回
             yield("/vnav stop")
             State = CharacterState.collectionsFateTurnIn
             LogInfo("[FATE] State Change: CollectionsFatesTurnIn")
@@ -2420,7 +2417,7 @@ function DoFate()
                 end
             elseif (PathfindInProgress() or PathIsRunning()) then -- 攻击距离外，处理卡路里的情况
                 local now = os.clock()
-                if now - LastStuckCheckTime > 5 then -- 5 秒内移动距离小于 3 则执行接下来逻辑
+                if now - LastStuckCheckTime > 10 then -- 10 秒内移动距离小于 3 则执行接下来逻辑
                     local x = GetPlayerRawXPos()
                     local y = GetPlayerRawYPos()
                     local z = GetPlayerRawZPos()
