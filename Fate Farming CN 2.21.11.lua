@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test3.7
+test3.8
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
