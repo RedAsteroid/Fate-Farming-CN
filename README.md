@@ -1,7 +1,7 @@
 # Fate Farming CN
 原作者库：https://github.com/pot0to/pot0to-SND-Scripts
 
-Fate farming 脚本具备以下功能：
+Fate farming 脚本具有以下功能：
 - 在双色宝石接近上限时，自动兑换两种新旧版本的 **「双色宝石收据」**
 - FATE 优先级系统: 额外奖励 > 最高进度 > 距离水晶最近的 FATE > 剩余时间 > 距离玩家最近的 FATE
 - FATE 期间出现 **「迷失少女/迷失者」** 时进行优先处理
@@ -26,6 +26,11 @@ Fate farming 脚本具备以下功能：
 - 增加部分 FATE 进行时卡死与部分寻路卡死时的脱困逻辑
 - 修改收集物品 FATE 提交物品数量（7 → 6）
 
+一些其他注意事项：
+- 中国服务器当前版本为`7.15`，卫月核心只支持`API 11`版本插件，国际服`API 12`插件无法正常安装，下方的相关插件请自行搜索**旧版本**或**本地化版本**进行安装
+- 在中国服务器，比起考虑 FATE 伐木效率，您更应该关心无偿帮助 Game Master 举报您使用脚本刷 FATE 的玩家
+- 禁止倒卖本仓库的任何内容，
+
 ##  Something Need Doing 插件入门（SND）
 ![SND Basics](img/1.png)
 
@@ -35,7 +40,7 @@ Fate farming 脚本具备以下功能：
 |-------------|---------|------|
 | Something Need Doing [Expanded Edition] | 运行代码的主插件 | https://puni.sh/api/repository/croizat |
 | VNavmesh | 寻路与移动 | https://puni.sh/api/repository/veyn |
-| RotationSolver Reborn <b>OR</b> BossMod Reborn <b>OR</b> Veyn's BossMod <b>OR</b> Wrath Combo | 选择目标并攻击敌人 | https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://puni.sh/api/repository/veyn<br>https://love.puni.sh/ment.json |
+| RotationSolver Reborn <b>或</b> BossMod Reborn <b>或</b> Veyn's BossMod <b>或</b> Wrath Combo | 选择目标并攻击敌人 | https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://puni.sh/api/repository/veyn<br>https://love.puni.sh/ment.json |
 | TextAdvance | 与 FATE NPC 进行交互 | https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json |
 | Teleporter | 传送到以太之光 | Dalamud 主库 |
 | Lifestream | 切换副本区域 | https://raw.githubusercontent.com/NightmareXIV/MyDalamudPlugins/main/pluginmaster.json |
@@ -82,6 +87,7 @@ Fate farming 脚本具备以下功能：
 可以选择这张地图，不过两者都需要手动干预。
 由于特殊 FATE 和 S 级狩猎怪物的存在，这个地图通常有很多人。
 情况好坏取决于：这些人是在和你一起刷 FATE 还是只是在挂机。
+- 汉化者建议：最佳地图为遗产之地、夏劳尼荒野、厄尔庇斯这三张地图，优先级从高到低。
 
 ### 使用什么职业最好？
 取决于你拥有的职业，但热门选择是：
@@ -90,6 +96,7 @@ Fate farming 脚本具备以下功能：
 - **`白魔法师`** 的神圣连发可以击晕敌人。如果你能在神圣发动前承受住初始攻击，可能比 **`战士`** 完成 FATE 更快
 - **`蝰蛇剑士`** 伤害很高，但生存可能是个问题，将你的陆行鸟设为治疗战术
 - **`绘灵法师`**(最佳) 同样伤害很高，但 FATE 脚本可能会经常让你离开绘灵幻景区域
+- 汉化者建议：无脑绘灵法师，陆行鸟搭档选治疗战术保活。治疗坦克输出不够，而近战在输出环境上会丢失大量伤害影响效率，因此选画家，实战也是最佳的。
 
 ### 为什么我的游戏会卡顿？特别是在进行 BOSS FATE 时？
 您安装了 Pandora's box 吗？尝试完全关闭它。
