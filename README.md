@@ -1,5 +1,7 @@
 # Fate Farming CN
-Fate farming 脚本具备以下功能:
+原作者库：https://github.com/pot0to/pot0to-SND-Scripts
+
+Fate farming 脚本具备以下功能：
 - 在双色宝石接近上限时，自动兑换两种新旧版本的 **「双色宝石收据」**
 - FATE 优先级系统: 额外奖励 > 最高进度 > 距离水晶最近的 FATE > 剩余时间 > 距离玩家最近的 FATE
 - FATE 期间出现 **「迷失少女/迷失者」** 时进行优先处理
@@ -9,6 +11,19 @@ Fate farming 脚本具备以下功能:
 - 可自动处理雇员任务和军队筹备，完成后返回 FATE 地图继续进行伐木
 - 自动购买 **「基萨尔野菜」** 和 **「8级暗物质」** 在这些物品用完时
 - 提供配套的 **「Atma farming」** 专用子脚本，也支持自定义脚本（参见 [配套脚本部分](#配套脚本)）
+
+相较于原版做了以下改动：
+- 新增支持 AEAssist 循环
+- 修改 MinWait 和 MaxWait 默认值，减少 FATE 完成后的等待时间
+- 额外奖励 FATE 提升为最高优先级
+- 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
+- 修复 DownTimeWaitAtNearestAetheryte 相关方法无法在无 FATE 时回到以太之光的问题
+- 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路
+- 将 Retainers 默认设置为 false，防止不在原始服务器时卡死
+- 改动 陆行鸟搭档 相关默认参数
+- SelectNextZone 方法添加更多防御性检测(似乎没用)
+- FATE 后处理任务添加延迟防止卡住
+- 增加部分 FATE 进行时卡死与部分寻路卡死时的脱困逻辑
 
 ##  Something Need Doing 插件入门（SND）
 ![SND Basics](img/1.png)
@@ -39,9 +54,9 @@ Fate farming 脚本具备以下功能:
 ### RSR 设置
 | | |
 |--|--|
-| ![RSR Engage Settings](img/3RSR设置1.png) | 无论您的职业是否为 Tank，都选择"All Targets that are in range for any abilities (Tanks/Autoduty)" |
-| ![RSR Map Specific Priorities](img/3RSR设置2.png) | 将 **「迷失少女」** 和 **「迷失者」** 添加到 Prio Target 中 |
-| ![RSR Gap Closer Distance](img/3RSR设置3.png) | 推荐近战设置: gapcloser distance(最短接近距离) = 20y |
+| ![RSR Engage Settings](img/31.png) | 无论您的职业是否为 Tank，都选择 "All Targets that are in range for any abilities (Tanks/Autoduty)" |
+| ![RSR Map Specific Priorities](img/32.png) | 将 **「迷失少女」** 和 **「迷失者」** 添加到 Prio Target 中 |
+| ![RSR Gap Closer Distance](img/33.png) | 推荐近战设置：gapcloser distance(最短接近距离) = 20y |
 
 ## 配套脚本
 配套脚本需与基础脚本 `Fate Farming.lua` 配合使用，可针对不同 FATE 伐木场景提供更精细的控制。
@@ -62,7 +77,7 @@ Fate farming 脚本具备以下功能:
 但同时完成速度也越快，热门地图推荐：
 - 遗产之地：FATE 等级低到既可以快速击杀怪物，同时又高到不需要等级同步
 - 克扎玛乌卡湿地：以太之光位置覆盖范围良好，没有像遗产之地那样的高墙
-- 夏劳尼荒野：如果您不介意专心照看角色并且对特殊 FATE (蛇王得酷热涅：荒野的死斗 > 水豚坐骑)或 S 级狩猎怪物感兴趣，
+- 夏劳尼荒野：如果您不介意专心照看角色并且对特殊 FATE (蛇王得酷热涅：荒野的死斗 > `美花帕拉` 坐骑)或 S 级狩猎怪物感兴趣，
 可以选择这张地图，不过两者都需要手动干预。
 由于特殊 FATE 和 S 级狩猎怪物的存在，这个地图通常有很多人。
 情况好坏取决于：这些人是在和你一起刷 FATE 还是只是在挂机。
