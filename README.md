@@ -29,7 +29,7 @@ Fate farming 脚本具有以下功能：
 一些其他注意事项：
 - 中国服务器当前版本为`7.15`，卫月核心只支持`API 11`版本插件，国际服`API 12`插件无法正常安装，下方的相关插件请自行搜索**旧版本**或**本地化版本**进行安装
 - 在中国服务器，比起考虑 FATE 伐木效率，您更应该关心无偿帮助 Game Master 举报您使用脚本刷 FATE 的玩家
-- 禁止倒卖本仓库的任何内容，
+- 禁止倒卖本仓库的任何内容，如果你从闲鱼购买了这个脚本，不要找我当客服，滚去找你亲爱的倒狗野爹
 
 ##  Something Need Doing 插件入门（SND）
 ![SND Basics](img/1.png)
@@ -48,7 +48,7 @@ Fate farming 脚本具有以下功能：
 ### 可选插件
 | 插件名称 | 用途 | 仓库 |
 |-------------|---------|------|
-| BossMod Reborn <b>OR</b> Veyn's BossMod | AI 功能用于躲避机制 | https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://puni.sh/api/repository/veyn |
+| BossMod Reborn <b>或</b> Veyn's BossMod | AI 功能用于躲避机制 | https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://puni.sh/api/repository/veyn |
 | AutoRetainer | 在雇员就绪时处理雇员任务，然后返回 FATE 地图继续伐木 | https://love.puni.sh/ment.json |
 | Deliveroo | 在您的雇员带回太多物品堵塞物品栏时，向大国防联军提交装备 | https://plugins.carvel.li/ |
 
