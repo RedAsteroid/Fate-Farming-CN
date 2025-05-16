@@ -10,14 +10,13 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test3.9 
+test4.0 
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
-        1. 未测试 RSR/VBM/Wrath 循环功能可用性，我还没有用过这三个作为循环插件打 FATE
-        2. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
-        3. 启动脚本时，GetAetherytesInZone() 可能会执行失败，导致报错中止脚本运行或游戏崩溃，这个问题目前无法处理，每次运行脚本都有可能发生，使用多地图脚本更容易触发这个问题
+        1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
+        2. 启动脚本时，GetAetherytes() 等方法可能抛出空引用异常，导致游戏崩溃，这个问题由多方面造成目前无法解决。如需避免崩溃，请不要使用多地图伐木脚本
 
 以下是相较于原版进行的修改：
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
@@ -28,9 +27,11 @@ test3.9
     6. 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路
     7. 将 Retainers 默认设置为 false，如果您需要收雇员请手动改为 true
     8. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
-    9. SelectNextZone 添加更多防御性检测(似乎没用)
-    10. FATE 后处理任务添加延迟防止卡住
-    11. FATE 进行期间，追加超出射程、目标有阻挡的接近逻辑，追加寻路卡住时跳跃脱困的任务
+    9. SelectNextZone 添加更多防御性检测(其实没用)
+    10. FATE 后处理任务添加延迟防止执行过快卡死
+    11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
+    12. 推迟 NPC 类型 FATE 选中目标后的降落时间，避免降落到无法脱离的障碍地形
+    13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质错误任务的错误逻辑顺序
 
 【如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本】
 
@@ -63,7 +64,7 @@ test3.9
                     - 修正文本错误: 将 "should it to Turn" 改为 "should it do Turn"。
                 
 ********************************************************************************
-*                               依赖插件                               *
+*                               依赖插件                                        *
 ********************************************************************************
 
 运行所需的插件:
@@ -1614,11 +1615,11 @@ function FlyBackToAetheryte()
         LogInfo("[FATE] ClosestAetheryte.y: "..closestAetheryte.y)
         if closestAetheryte ~= nil then
             SetMapFlag(SelectedZone.zoneId, closestAetheryte.x, closestAetheryte.y, closestAetheryte.z)
-            if (not GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) then --补充缺失的动作，在执行回到目标以太之光前尝试进入飞行状态
+            if (not GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) then --补充跳跃动作，防止寻路失败（起始点位于地底）
             yield('/gaction 跳跃')
             yield('/wait 1')
             end
-            PathfindAndMoveTo(closestAetheryte.x, closestAetheryte.y + 15, closestAetheryte.z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --追加高度修正 15y，防止寻路到水晶里面
+            PathfindAndMoveTo(closestAetheryte.x, closestAetheryte.y + 15, closestAetheryte.z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --追加高度修正 15y，防止寻路到水晶模型内部
         end
     end
 end
@@ -1767,11 +1768,12 @@ function MoveToFate()
     end
 
     -- upon approaching fate, pick a target and switch to pathing towards target
-    if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 60 then -- 修改此值将影响触发范围
+    if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 60 then
         if HasTarget() then
             LogInfo("[FATE] Found FATE target, immediate rerouting")
-                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos())
-            if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则立刻寻路到目标，但是日志中总是建立寻路失败
+            if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生。
+                yield("/wait 2") --等待 2 秒后进入 interactWithNpc 状态，也就是降落流程
                 State = CharacterState.interactWithNpc
                 LogInfo("[FATE] State Change: Interact with npc")
             -- if GetTargetName() == CurrentFate.npcName then
@@ -1780,7 +1782,7 @@ function MoveToFate()
             --     State = CharacterState.middleOfFateDismount
             --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
             else
-                State = CharacterState.middleOfFateDismount
+                State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态
                 LogInfo("[FATE] State Change: MiddleOfFateDismount")
             end
             return
@@ -1937,7 +1939,7 @@ function CollectionsFateTurnIn()
             end
         end
     else
-        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回
+        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回，7 个物品是最低金牌要求，单人数值的收集任务需要提交 18 个完成 
             GotCollectionsFullCredit = true
         end
 
@@ -2013,6 +2015,7 @@ function SummonChocobo()
             return
         end
     end
+    yield("/wait 1") --增加延迟，防止卡顿
     State = CharacterState.ready
     LogInfo("[FATE] State Change: Ready")
 end
@@ -2024,6 +2027,7 @@ function AutoBuyGysahlGreens()
         elseif IsInZone(SelectedZone.zoneId) then
             yield("/item 基萨尔野菜")
         else
+            yield("/wait 3") --增加延迟，防止卡死在当前地图
             State = CharacterState.ready
             LogInfo("State Change: ready")
         end
@@ -2034,7 +2038,7 @@ function AutoBuyGysahlGreens()
             TeleportTo("利姆萨·罗敏萨下层甲板")
             return
         else
-            local gysahlGreensVendor = { x=-62.1, y=18.0, z=9.4, npcName="布鲁盖尔商会 班戈·赞戈" }
+            local gysahlGreensVendor = { x=-62.1, y=18.0, z=9.4, npcName="班戈·赞戈" }
             if GetDistanceToPoint(gysahlGreensVendor.x, gysahlGreensVendor.y, gysahlGreensVendor.z) > 5 then
                 if not (PathIsRunning() or PathfindInProgress()) then
                     PathfindAndMoveTo(gysahlGreensVendor.x, gysahlGreensVendor.y, gysahlGreensVendor.z)
@@ -2042,11 +2046,14 @@ function AutoBuyGysahlGreens()
             elseif HasTarget() and GetTargetName() == gysahlGreensVendor.npcName then
                 yield("/vnav stop")
                 if IsAddonVisible("SelectYesno") then
+                    yield("/wait 1") --添加延迟，防止UI出现过慢卡死
                     yield("/callback SelectYesno true 0")
                 elseif IsAddonVisible("SelectIconString") then
+                    yield("/wait 1") --添加延迟，防止UI出现过慢卡死
                     yield("/callback SelectIconString true 0")
                     return
                 elseif IsAddonVisible("Shop") then
+                    yield("/wait 1") --添加延迟，防止UI出现过慢卡死
                     yield("/callback Shop true 0 2 99")
                     return
                 elseif not GetCharacterCondition(CharacterCondition.occupied) then
@@ -2327,7 +2334,7 @@ function DoFate()
         return
     elseif CurrentFate.isCollectionsFate then
         yield("/wait 1") -- needs a moment after start of fate for GetFateEventItem to populate
-        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 or (GotCollectionsFullCredit and GetFateProgress(CurrentFate.fateId) == 100) then --撤回
+        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 or (GotCollectionsFullCredit and GetFateProgress(CurrentFate.fateId) == 100) then --撤回，7 个物品是最低金牌要求
             yield("/vnav stop")
             State = CharacterState.collectionsFateTurnIn
             LogInfo("[FATE] State Change: CollectionsFatesTurnIn")
@@ -2391,68 +2398,59 @@ function DoFate()
     end
 
     -- pathfind closer if enemies are too far
-    if not GetCharacterCondition(CharacterCondition.inCombat) then
-        if HasTarget() then
+    if not GetCharacterCondition(CharacterCondition.inCombat) then --条件：脱战状态
+        if HasTarget() then --条件：选中目标
             local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
-            if GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius()) then
-                if PathfindInProgress() or PathIsRunning() then
+            if GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius()) then --条件：与目标距离 小于等于(<=) 最大攻击距离+目标碰撞体积。即目标处于攻击距离内，可以攻击目标的情况 
+                if PathfindInProgress() or PathIsRunning() then --条件：正在寻路。任务：停止寻路，冷却 3.002 秒后执行后续代码
                     yield("/vnav stop")
                     yield("/wait 3.002") -- wait 5s before inching any closer // Maybe it won't take that long
-                --[[
-                elseif IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "看不到目标。" then --攻击距离内，追加处理卡视野的情况，似乎是不需要的
-                    LogInfo("看不到目标，尝试寻路修正")
-                    yield("/e 看不到目标，尝试寻路修正")
-                    yield("/vnav stop")
-                    PathfindAndMoveTo(x, y, z)
-                    yield("/wait 2")
-                    ]]
-                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox
-                    PathfindAndMoveTo(x, y, z)
+                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1+碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。一般情况下能脱离"看不到目标"。
+                    PathfindAndMoveTo(x, y, z) --备注：这个距离是三维距离，可能会优先于下方的错误提示通过判断，但能正常复位，有bug了再说.jpg
                     yield("/wait 1") -- inch closer by 1s
                 end
-            elseif not (PathfindInProgress() or PathIsRunning()) then
-                yield("/wait 3.003") -- give 5s for enemy AoE casts to go off before attempting to move closer // Maybe it won't take that long
-                if (x ~= 0 and z~=0 and not GetCharacterCondition(CharacterCondition.inCombat)) and not GetCharacterCondition(CharacterCondition.casting) then
+            elseif IsAddonVisible("_TextError") then
+                -- 优先处理错误提示（看不到目标、目标在射程之外）
+                local errorText = GetNodeText("_TextError", 1)
+                if errorText == "看不到目标。" then
+                    LogInfo("[FATE] 看不到目标，尝试寻路修正")
+                    yield("/e [FATE] 看不到目标，尝试寻路修正")
+                    PathfindAndMoveTo(x, y, z)
+                    yield("/wait 1.501")
+                elseif errorText == "目标在射程之外。" then
+                    LogInfo("[FATE] 目标在射程之外，尝试寻路修正")
+                    yield("/e [FATE] 目标在射程之外，尝试寻路修正")
+                    PathfindAndMoveTo(x, y, z)
+                    yield("/wait 2.001")
+                end
+           elseif not (PathfindInProgress() or PathIsRunning()) then --条件：非寻路状态
+                yield("/wait 3.003") -- give 5s for enemy AoE casts to go off before attempting to move closer // change to 3.003s 冷却 3.003 秒
+                if (x ~= 0 and z~=0 and not GetCharacterCondition(CharacterCondition.inCombat)) and not GetCharacterCondition(CharacterCondition.casting) then --条件：目标xz不为0，脱战状态。任务：寻路到目标
                     PathfindAndMoveTo(x, y, z)
                 end
-            elseif (PathfindInProgress() or PathIsRunning()) then -- 攻击距离外，处理卡路里的情况
+            elseif (PathfindInProgress() or PathIsRunning()) then --处理被地形障碍卡住的情况
                 local now = os.clock()
-                if now - LastStuckCheckTime > 10 then -- 10 秒内移动距离小于 3 则执行接下来逻辑
-                    local x = GetPlayerRawXPos()
-                    local y = GetPlayerRawYPos()
-                    local z = GetPlayerRawZPos()
-
-                    if GetDistanceToPoint(LastStuckCheckPosition.x, LastStuckCheckPosition.y, LastStuckCheckPosition.z) < 3 then
-                        yield("/e [FATE] FATE 进行中接近敌人寻路时卡地形，尝试跳跃")
+                if now - LastStuckCheckTime > 3 then -- 3 秒内移动距离小于 1 则执行接下来逻辑
+                    local x1,y1,z1 = GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos()
+                    if GetDistanceToPoint(LastStuckCheckPosition.x, LastStuckCheckPosition.y, LastStuckCheckPosition.z) < 1 then
+                        yield("/e [FATE] FATE 进行中接近敌人寻路时卡地形，尝试跳跃并重新寻路")
                         LogInfo("[FATE] Antistuck in fate")
+                        PathfindAndMoveTo(x, y, z)
                         yield("/gaction 跳跃") -- 尝试跳跃
                     end
                     LastStuckCheckTime = now
-                    LastStuckCheckPosition = {x=x, y=y, z=z}
+                    LastStuckCheckPosition = {x=x1, y=y1, z=z1}
                     return
                 end
-            elseif IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "看不到目标。" then --攻击距离外，追加处理卡视野的情况
-                LogInfo("看不到目标，尝试寻路修正")
-                yield("/e 看不到目标，尝试寻路修正")
-                yield("/vnav stop")
-                PathfindAndMoveTo(x, y, z)
-                yield("/wait 2")
-            elseif IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "目标在射程之外。" then --攻击距离外，追加处理射程不够的情况
-                LogInfo("目标在射程之外，尝试寻路修正")
-                yield("/e 目标在射程之外，尝试寻路修正")
-                yield("/vnav stop")
-                PathfindAndMoveTo(x, y, z)
-                yield("/wait 3")
             end
-            return
-        else
+        else --条件：未选择目标
             TargetClosestFateEnemy()
             yield("/wait 1") -- wait in case target doesn't stick
             if (not HasTarget()) and not GetCharacterCondition(CharacterCondition.casting) then
-                PathfindAndMoveTo(CurrentFate.x, CurrentFate.y, CurrentFate.z)
+                PathfindAndMoveTo(CurrentFate.x, CurrentFate.y, CurrentFate.z) --寻路到当前 FATE 接近中心的位置
             end
         end
-    else
+    else --条件：战斗状态
         if HasTarget() and (GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius())) then
             if PathfindInProgress() or PathIsRunning() then
                 yield("/vnav stop")
@@ -2523,7 +2521,7 @@ function Ready()
     if not LogInfo("[FATE] Ready -> IsPlayerAvailable()") and not IsPlayerAvailable() then
         return
     elseif not LogInfo("[FATE] Ready -> Repair") and RepairAmount > 0 and NeedsRepair(RepairAmount) and
-        (not shouldWaitForBonusBuff or (SelfRepair and GetItemCount(33916) > 0)) then
+        (not shouldWaitForBonusBuff or (SelfRepair and GetItemCount(33916) > 12)) then --调整8级暗物质起购数量，要修的装备如果多余暗物质数量，会卡死，一次修理最大数量装备为12
         State = CharacterState.repair
         LogInfo("[FATE] State Change: Repair")
     elseif not LogInfo("[FATE] Ready -> ExtractMateria") and ShouldExtractMateria and CanExtractMateria(100) and GetInventoryFreeSlotCount() > 1 then
@@ -2785,8 +2783,9 @@ function Repair()
     if IsAddonVisible("Repair") then
         if not NeedsRepair(RepairAmount) then
             yield("/callback Repair true -1") -- if you don't need repair anymore, close the menu
+            yield("/wait 1") --添加延迟，防止关闭修理窗口后角色未就绪时立刻发起传送
         else
-            yield("/callback Repair true 0") -- select repair
+            yield("/callback Repair true 0") -- select repair 严重问题：如果有8级暗物质，但是数量少于要修的装备，会卡死。调整需要购买的阈值
         end
         return
     end
@@ -2800,7 +2799,7 @@ function Repair()
 
     local hawkersAlleyAethernetShard = { x=-213.95, y=15.99, z=49.35 }
     if SelfRepair then
-        if GetItemCount(33916) > 0 then
+        if GetItemCount(33916) > 12 then --持有8级暗物质数量大于 12 时，关闭 shop addon
             if IsAddonVisible("Shop") then
                 yield("/callback Shop true -1")
                 return
@@ -2848,13 +2847,21 @@ function Repair()
                 end
             else
                 if not HasTarget() or GetTargetName() ~= darkMatterVendor.npcName then
+                    yield("/vnav stop")
                     yield("/target "..darkMatterVendor.npcName)
-                elseif not GetCharacterCondition(CharacterCondition.occupiedInQuestEvent) then
-                    yield("/interact")
+                --elseif not GetCharacterCondition(CharacterCondition.occupiedInQuestEvent) then ???
                 elseif IsAddonVisible("SelectYesno") then
                     yield("/callback SelectYesno true 0")
+                    return
                 elseif IsAddonVisible("Shop") then
+                    yield("/wait 1") --添加延迟，防止 UI 未出现
                     yield("/callback Shop true 0 40 99")
+                    return
+                elseif HasTarget() and GetTargetName() == darkMatterVendor.npcName then --参考购买野菜的逻辑，调整顺序将交互置底，原先的逻辑会无限卡在交互判断
+                    yield("/vnav stop")
+                    yield("/interact")
+                    yield("/wait 1") --添加延迟，防止 UI 未出现
+                    return
                 end
             end
         else
