@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.0 
+test4.1 
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
@@ -30,10 +30,13 @@ test4.0
     9. SelectNextZone 添加更多防御性检测(其实没用)
     10. FATE 后处理任务添加延迟防止执行过快卡死
     11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
-    12. 推迟 NPC 类型 FATE 选中目标后的降落时间，避免降落到无法脱离的障碍地形
+    12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形
     13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质错误任务的错误逻辑顺序
 
-【如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本】
+一些其他事项：
+    1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
+        - 仓库地址：https://raw.githubusercontent.com/NiGuangOwO/DalamudPlugins/main/pluginmaster.json
+    2. 如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本，但是请注意存在游戏崩溃问题
 
 绝对不要无人值守使用这个脚本，或者一天过长时间使用(比如每天刷20小时之类的)。
 使用前请务必检查设置是否符合您的运行环境，避免报错与卡死情况出现。
@@ -1773,7 +1776,8 @@ function MoveToFate()
             LogInfo("[FATE] Found FATE target, immediate rerouting")
                 PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则立刻寻路到目标，但是日志中总是建立寻路失败
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生。
-                yield("/wait 2") --等待 2 秒后进入 interactWithNpc 状态，也就是降落流程
+                --所以我想针对 NPC 类型 FATE，最好是保证在一个绝对能安全降落的位置进行降落，这个位置有很多，比如：FATE 中心较近内再选目标降落，距离 NPC 一个很近的位置降落
+                --yield("/wait 2") --等待 2 秒后进入 interactWithNpc 状态，也就是降落流程
                 State = CharacterState.interactWithNpc
                 LogInfo("[FATE] State Change: Interact with npc")
             -- if GetTargetName() == CurrentFate.npcName then
@@ -1787,9 +1791,16 @@ function MoveToFate()
             end
             return
         else
-            if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and not IsInFate() then
+            if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and not IsInFate() then --NPC 类型 FATE，不在 FATE 范围内，选择 NPC（应用于还未激活的 NPC FATE）
+                --yield("/e Debug 1")
                 yield("/target "..CurrentFate.npcName)
-            else
+            elseif (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and IsInFate() then --NPC 类型 FATE，在 FATE 范围内，距离寻路终点小于 25，选择敌人 （应用于已经激活的 NPC FATE）
+                if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then --如此设计会导致 NPC 类型 FATE 降落位置更靠近 FATE 中心，从而让角色更容易拉到一大群怪（生存能力不强的DPS不能快速清怪有暴毙风险，相比无法脱困算可以接受）
+                    --yield("/e Debug 2")
+                    TargetClosestFateEnemy()
+                end
+            elseif not (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --非 NPC 类型 FATE，忽略是否在 FATE 范围内，选择敌人 （这是原先的 else 条件，应用于普通 FATE。实际上不限定在 FATE 内执行会导致一些 FATE 更容易降落在边缘）
+                --yield("/e Debug 3")
                 TargetClosestFateEnemy()
             end
             yield("/wait 0.5") -- give it a moment to make sure the target sticks
@@ -2405,11 +2416,11 @@ function DoFate()
                 if PathfindInProgress() or PathIsRunning() then --条件：正在寻路。任务：停止寻路，冷却 3.002 秒后执行后续代码
                     yield("/vnav stop")
                     yield("/wait 3.002") -- wait 5s before inching any closer // Maybe it won't take that long
-                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1+碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。一般情况下能脱离"看不到目标"。
-                    PathfindAndMoveTo(x, y, z) --备注：这个距离是三维距离，可能会优先于下方的错误提示通过判断，但能正常复位，有bug了再说.jpg
+                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1+碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。
+                    PathfindAndMoveTo(x, y, z) --备注：这个距离是三维距离，可能不会优先于下方的错误提示通过判断，但能正常复位，有bug了再说.jpg
                     yield("/wait 1") -- inch closer by 1s
                 end
-            elseif IsAddonVisible("_TextError") then
+            elseif IsAddonVisible("_TextError") then --并非必要，后续看情况删改，多此一举
                 -- 优先处理错误提示（看不到目标、目标在射程之外）
                 local errorText = GetNodeText("_TextError", 1)
                 if errorText == "看不到目标。" then
@@ -2423,7 +2434,7 @@ function DoFate()
                     PathfindAndMoveTo(x, y, z)
                     yield("/wait 2.001")
                 end
-           elseif not (PathfindInProgress() or PathIsRunning()) then --条件：非寻路状态
+            elseif not (PathfindInProgress() or PathIsRunning()) then --条件：非寻路状态
                 yield("/wait 3.003") -- give 5s for enemy AoE casts to go off before attempting to move closer // change to 3.003s 冷却 3.003 秒
                 if (x ~= 0 and z~=0 and not GetCharacterCondition(CharacterCondition.inCombat)) and not GetCharacterCondition(CharacterCondition.casting) then --条件：目标xz不为0，脱战状态。任务：寻路到目标
                     PathfindAndMoveTo(x, y, z)
@@ -2434,7 +2445,7 @@ function DoFate()
                     local x1,y1,z1 = GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos()
                     if GetDistanceToPoint(LastStuckCheckPosition.x, LastStuckCheckPosition.y, LastStuckCheckPosition.z) < 1 then
                         yield("/e [FATE] FATE 进行中接近敌人寻路时卡地形，尝试跳跃并重新寻路")
-                        LogInfo("[FATE] Antistuck in fate")
+                        LogInfo("[FATE] Antistuck in fate idle")
                         PathfindAndMoveTo(x, y, z)
                         yield("/gaction 跳跃") -- 尝试跳跃
                     end
@@ -2451,12 +2462,12 @@ function DoFate()
             end
         end
     else --条件：战斗状态
-        if HasTarget() and (GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius())) then
-            if PathfindInProgress() or PathIsRunning() then
+        if HasTarget() and (GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius())) then --有目标，与目标距离在攻击范围内。战斗中可能会遇到0距离被树、石头之类的阻挡导致"看不到目标"，但是AI一般会复位这种情况。
+            if PathfindInProgress() or PathIsRunning() then --条件：寻路中。任务：中止寻路。
                 yield("/vnav stop")
             end
-        elseif not CurrentFate.isBossFate then
-            if not (PathfindInProgress() or PathIsRunning()) then
+        elseif not CurrentFate.isBossFate then --当前 FATE 为非 Boss FATE    如果迷失少女刷新在 Boss FATE 并且不在射程之内，可能会导致玩家什么都做不了，直到被Boss的AoE赶到攻击范围内
+            if not (PathfindInProgress() or PathIsRunning()) then --不在寻路中，等待3秒，如果目标xz不为0且不在咏唱状态，寻路到目标
                 yield("/wait 3.004")
                 local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
                 if (x ~= 0 and z~=0)  and not GetCharacterCondition(CharacterCondition.casting) then
