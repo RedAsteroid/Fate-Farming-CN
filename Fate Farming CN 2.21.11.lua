@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.1 
+test4.2 
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
@@ -32,6 +32,7 @@ test4.1
     11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
     12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形
     13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质错误任务的错误逻辑顺序
+    14. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
@@ -2184,13 +2185,13 @@ function TurnOnCombatMods(rotationMode)
                 yield("/bmrai on")
                 yield("/bmrai followtarget on") -- overrides navmesh path and runs into walls sometimes
                 yield("/bmrai followcombat on")
-                -- yield("/bmrai followoutofcombat on")
+                yield("/bmrai followoutofcombat on") --需要评估稳定性
                 yield("/bmrai maxdistancetarget " .. MaxDistance)
             elseif DodgingPlugin == "VBM" then
                 yield("/vbmai on")
                 yield("/vbmai followtarget on") -- overrides navmesh path and runs into walls sometimes
                 yield("/vbmai followcombat on")
-                -- yield("/bmrai followoutofcombat on")
+                yield("/bmrai followoutofcombat on")
                 yield("/vbmai maxdistancetarget " .. MaxDistance)
                 if RotationPlugin ~= "VBM" then
                     yield("/vbmai ForbidActions on") --This Disables VBM AI Auto-Target
@@ -2466,8 +2467,8 @@ function DoFate()
             if PathfindInProgress() or PathIsRunning() then --条件：寻路中。任务：中止寻路。
                 yield("/vnav stop")
             end
-        elseif not CurrentFate.isBossFate then --当前 FATE 为非 Boss FATE    如果迷失少女刷新在 Boss FATE 并且不在射程之内，可能会导致玩家什么都做不了，直到被Boss的AoE赶到攻击范围内
-            if not (PathfindInProgress() or PathIsRunning()) then --不在寻路中，等待3秒，如果目标xz不为0且不在咏唱状态，寻路到目标
+        elseif not CurrentFate.isBossFate then --当前 FATE 为非 Boss FATE    如果迷失少女刷新在 Boss FATE 并且不在射程之内，可能会导致玩家什么都做不了，直到被Boss的AoE赶到攻击范围内，或者卡住直到结束。为迷失少女/迷失者加特殊判断或启用 Bossmod 脱战时跟随
+            if not (PathfindInProgress() or PathIsRunning()) then --不在寻路中，等待3秒，如果目标xz不为0(约等于有目标)且不在咏唱状态，寻路到目标
                 yield("/wait 3.004")
                 local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
                 if (x ~= 0 and z~=0)  and not GetCharacterCondition(CharacterCondition.casting) then
