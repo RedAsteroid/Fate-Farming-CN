@@ -10,13 +10,13 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.2 
+test4.3 
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
         1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
-        2. 启动脚本时，GetAetherytes() 等方法可能抛出空引用异常，导致游戏崩溃，这个问题由多方面造成目前无法解决。如需避免崩溃，请不要使用多地图伐木脚本
+        2. GetAetheryteList、GetAetherytesInZone、GetAetheryteName 如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 DR 冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑会导致游戏崩溃。
 
 以下是相较于原版进行的修改：
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
@@ -30,9 +30,10 @@ test4.2
     9. SelectNextZone 添加更多防御性检测(其实没用)
     10. FATE 后处理任务添加延迟防止执行过快卡死
     11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
-    12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形
+    12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标的位置
     13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质错误任务的错误逻辑顺序
     14. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
+    15. TeleportTo 逻辑增加空值/空字符串检查
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
@@ -1431,6 +1432,14 @@ function AcceptNPCFateOrRejectOtherYesno()
 end
 
 function TeleportTo(aetheryteName)
+    -- 检查 aetheryteName 是否为空，如果为空则重新获取当前地图水晶并退出函数
+    if aetheryteName == nil or aetheryteName == "" then
+        LogInfo("[FATE] aetheryteName为空值！重新获取以太之光信息！")
+        yield("/e aetheryteName为空值！重新获取以太之光信息！")
+        SelectedZone = SelectNextZone()
+        return
+    end
+
     AcceptTeleportOfferLocation(aetheryteName)
 
     while EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp()) - LastTeleportTimeStamp < 5 do
@@ -1774,11 +1783,11 @@ function MoveToFate()
     -- upon approaching fate, pick a target and switch to pathing towards target
     if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 60 then
         if HasTarget() then
-            LogInfo("[FATE] Found FATE target, immediate rerouting")
-                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则立刻寻路到目标，但是日志中总是建立寻路失败
+            LogInfo("[FATE] Found FATE target, immediate rerouting. No! wait 0.5 second plz!")
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则经过冷却后寻路到目标，但是日志中经常建立寻路失败
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生。
                 --所以我想针对 NPC 类型 FATE，最好是保证在一个绝对能安全降落的位置进行降落，这个位置有很多，比如：FATE 中心较近内再选目标降落，距离 NPC 一个很近的位置降落
-                --yield("/wait 2") --等待 2 秒后进入 interactWithNpc 状态，也就是降落流程
+                --yield("/wait 2") --等待 2 秒后进入 interactWithNpc 状态，也包含此类 FATE 的降落流程，不确定
                 State = CharacterState.interactWithNpc
                 LogInfo("[FATE] State Change: Interact with npc")
             -- if GetTargetName() == CurrentFate.npcName then
@@ -1787,7 +1796,8 @@ function MoveToFate()
             --     State = CharacterState.middleOfFateDismount
             --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
             else
-                State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态
+                yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置
+                State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态。但问题是有可能在 FATE 范围外选中目标，然后降落到 FATE 外，ACR 如果不停的使用技能读条会导致寻路立刻被中止角色动弹不得
                 LogInfo("[FATE] State Change: MiddleOfFateDismount")
             end
             return
@@ -2185,7 +2195,7 @@ function TurnOnCombatMods(rotationMode)
                 yield("/bmrai on")
                 yield("/bmrai followtarget on") -- overrides navmesh path and runs into walls sometimes
                 yield("/bmrai followcombat on")
-                yield("/bmrai followoutofcombat on") --需要评估稳定性
+                yield("/bmrai followoutofcombat on") --如果不启用，会导致迷失少女过远时与其脱战导致停留在原地，需要评估启用后的稳定性
                 yield("/bmrai maxdistancetarget " .. MaxDistance)
             elseif DodgingPlugin == "VBM" then
                 yield("/vbmai on")
@@ -2573,7 +2583,7 @@ function Ready()
             State = CharacterState.changingInstances
             LogInfo("[FATE] State Change: ChangingInstances")
             return
-        elseif CompanionScriptMode and not shouldWaitForBonusBuff then
+        elseif CompanionScriptMode and not shouldWaitForBonusBuff then --配套脚本切图逻辑
             if WaitingForFateRewards == 0 then
                 StopScript = true
                 LogInfo("[FATE] StopScript: Ready")
