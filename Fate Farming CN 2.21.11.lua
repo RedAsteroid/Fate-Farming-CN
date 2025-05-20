@@ -2,7 +2,7 @@
 
 ********************************************************************************
 *                                Fate Farming                                  *
-*                               Version 2.21.11                                *
+*                               Version 2.21.13                                *
 ********************************************************************************
 
 作者: pot0to (https://ko-fi.com/pot0to)
@@ -10,20 +10,20 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.3 
+test4.4
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
-        1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
-        2. GetAetheryteList、GetAetherytesInZone、GetAetheryteName 如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 DR 冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑会导致游戏崩溃。
+        1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0 版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
+        2. GetAetheryteList、GetAetherytesInZone、GetAetheryteName 如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 DR 冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑有可能导致游戏崩溃。
 
 以下是相较于原版进行的修改：
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
     2. 修改 MinWait 和 MaxWait 默认值，减少 FATE 完成后的等待时间
     3. 额外奖励 FATE 提升为最高优先级
     4. 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
-    5. 修复 DownTimeWaitAtNearestAetheryte 相关方法无法寻路到以太之光和寻路到以太之光模型内部的问题
+    5. 修复 DownTimeWaitAtNearestAetheryte 相关逻辑无法寻路到以太之光和寻路到以太之光模型内部的问题
     6. 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路
     7. 将 Retainers 默认设置为 false，如果您需要收雇员请手动改为 true
     8. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
@@ -31,7 +31,7 @@ test4.3
     10. FATE 后处理任务添加延迟防止执行过快卡死
     11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
     12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标的位置
-    13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质错误任务的错误逻辑顺序
+    13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质任务的错误逻辑顺序
     14. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
     15. TeleportTo 逻辑增加空值/空字符串检查
 
@@ -44,7 +44,8 @@ test4.3
 使用前请务必检查设置是否符合您的运行环境，避免报错与卡死情况出现。
 以下更新日志仅为原始版本的翻译。
 
-    -> 2.21.11  新增了上坐骑后 1 秒的等待时间，确保玩家完全处于骑乘状态。
+    -> 2.21.13  为 FlyBackToAetheryte 逻辑新增更多日志记录。
+                    新增了上坐骑后 1 秒的等待时间，确保玩家完全处于骑乘状态。
                     某些语言版本（如中文）的日志和默语处理速度比英文版更快，
                     导致系统过早触发下一步寻路，此时玩家尚未完成上坐骑，仍处于跳跃过程中。
                     这种情况会导致 vnavmesh 强制生成行走路径而不是飞行路径，从而引发卡顿问题。
@@ -55,7 +56,7 @@ test4.3
                     - 新增 FatePriority 设置选项，默认行为与之前一致，但包含上述新检测逻辑。
                     - 优先级顺序：进度 → 额外奖励 → 剩余时间 → 距离。
                 新增等待位置设置
-                    - 当未找到FATE时，可选择是否在以太之光处等待（默认启用）。
+                    - 当未找到 FATE 时，可选择是否在以太之光处等待（默认启用）。
                       若禁用，则会在上一个 FATE 完成的位置等待。
                 新增/调整等待时间设置
                     - 新增 MinWait（最小等待时间）设置，因原3秒等待有时过长。
@@ -923,7 +924,7 @@ FatesData = {
                 { fateName="不甘的冲锋者——灰达奇", npcName="崇灵之民男性" }, --22 boss
                 { fateName="大湖之恋", npcName="崇灵之民渔夫" }, --24 tower defense
                 { fateName="蛇王得酷热涅：狩猎的杀手锏", npcName="夕阳尚红 布鲁克·瓦" }, -- need check
-                { fateName="神秘翼龙荒野奇谈", npcName="佩鲁佩鲁族旅行商人" }, --wiki 有误 wiki 有误 wiki 有误 wiki 有误
+                { fateName="神秘翼龙荒野奇谈", npcName="佩鲁佩鲁族旅行商人" }, --wiki 有误，已修正
             },
             fatesWithContinuations = {},
             specialFates = {
@@ -949,7 +950,7 @@ FatesData = {
                 { fateName="前路多茫然", npcName="害怕的运送者" }
             },
             fatesWithContinuations = {
-                { fateName="机械公敌", continuationIsBoss=false } --已解决地底寻路问题，fatesWithContinuations表内 fate 打完后会原地等 30 秒等下一个连续的 FATE
+                { fateName="机械公敌", continuationIsBoss=false } --已解决地底寻路问题，fatesWithContinuations 表内 fate 打完后会原地等 30 秒等下一个连续的 FATE
             },
             blacklistedFates= {
                 --"亮闪闪的可回收资源", -- 地形问题，非常容易被卡住直到FATE结束或角色死亡
@@ -1354,6 +1355,7 @@ function GetClosestAetheryte(x, y, z, teleportTimePenalty)
     local closestAetheryte = nil
     local closestTravelDistance = math.maxinteger
     for _, aetheryte in ipairs(SelectedZone.aetheryteList) do
+        LogInfo("[FATE] Considering aetheryte "..aetheryte.aetheryteName) -- 2.21.12 update
         local distanceAetheryteToFate = DistanceBetween(aetheryte.x, y, aetheryte.z, x, y, z)
         local comparisonDistance = distanceAetheryteToFate + teleportTimePenalty
         LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance))
@@ -1363,6 +1365,11 @@ function GetClosestAetheryte(x, y, z, teleportTimePenalty)
             closestTravelDistance = comparisonDistance
             closestAetheryte = aetheryte
         end
+    end
+    if closestAetheryte ~= nil then -- 2.21.13 update
+        LogInfo("[FATE] Final selected aetheryte is: "..closestAetheryte.aetheryteName)
+    else
+        LogInfo("[FATE] Closest aetheryte is nil")
     end
 
     return closestAetheryte
@@ -1785,9 +1792,9 @@ function MoveToFate()
         if HasTarget() then
             LogInfo("[FATE] Found FATE target, immediate rerouting. No! wait 0.5 second plz!")
                 PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则经过冷却后寻路到目标，但是日志中经常建立寻路失败
-            if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生。
+            if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生异常。
                 --所以我想针对 NPC 类型 FATE，最好是保证在一个绝对能安全降落的位置进行降落，这个位置有很多，比如：FATE 中心较近内再选目标降落，距离 NPC 一个很近的位置降落
-                --yield("/wait 2") --等待 2 秒后进入 interactWithNpc 状态，也包含此类 FATE 的降落流程，不确定
+                --yield("/wait 2") --不可以！
                 State = CharacterState.interactWithNpc
                 LogInfo("[FATE] State Change: Interact with npc")
             -- if GetTargetName() == CurrentFate.npcName then
@@ -1796,7 +1803,7 @@ function MoveToFate()
             --     State = CharacterState.middleOfFateDismount
             --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
             else
-                yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置
+                yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置，实测表现还行
                 State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态。但问题是有可能在 FATE 范围外选中目标，然后降落到 FATE 外，ACR 如果不停的使用技能读条会导致寻路立刻被中止角色动弹不得
                 LogInfo("[FATE] State Change: MiddleOfFateDismount")
             end
@@ -1806,7 +1813,7 @@ function MoveToFate()
                 --yield("/e Debug 1")
                 yield("/target "..CurrentFate.npcName)
             elseif (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and IsInFate() then --NPC 类型 FATE，在 FATE 范围内，距离寻路终点小于 25，选择敌人 （应用于已经激活的 NPC FATE）
-                if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then --如此设计会导致 NPC 类型 FATE 降落位置更靠近 FATE 中心，从而让角色更容易拉到一大群怪（生存能力不强的DPS不能快速清怪有暴毙风险，相比无法脱困算可以接受）
+                if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then --如此设计会导致 NPC 类型 FATE 降落位置更靠近 FATE 中心，从而让角色更容易拉到一大群怪（生存能力不强的 DPS 不能快速清怪有暴毙风险，但相比无法脱困算可以接受）
                     --yield("/e Debug 2")
                     TargetClosestFateEnemy()
                 end
@@ -2431,7 +2438,7 @@ function DoFate()
                     PathfindAndMoveTo(x, y, z) --备注：这个距离是三维距离，可能不会优先于下方的错误提示通过判断，但能正常复位，有bug了再说.jpg
                     yield("/wait 1") -- inch closer by 1s
                 end
-            elseif IsAddonVisible("_TextError") then --并非必要，后续看情况删改，多此一举
+            elseif IsAddonVisible("_TextError") then --主要是为了处理距离外持续尝试使用技能的循环插件，即 AEAssist，理论上这个逻辑不是必要的
                 -- 优先处理错误提示（看不到目标、目标在射程之外）
                 local errorText = GetNodeText("_TextError", 1)
                 if errorText == "看不到目标。" then
@@ -2477,7 +2484,7 @@ function DoFate()
             if PathfindInProgress() or PathIsRunning() then --条件：寻路中。任务：中止寻路。
                 yield("/vnav stop")
             end
-        elseif not CurrentFate.isBossFate then --当前 FATE 为非 Boss FATE    如果迷失少女刷新在 Boss FATE 并且不在射程之内，可能会导致玩家什么都做不了，直到被Boss的AoE赶到攻击范围内，或者卡住直到结束。为迷失少女/迷失者加特殊判断或启用 Bossmod 脱战时跟随
+        elseif not CurrentFate.isBossFate then --当前 FATE 为非 Boss FATE    如果迷失少女刷新在 Boss FATE 并且不在射程之内，可能会导致玩家什么都做不了，直到被Boss的AoE赶到攻击范围内，或者卡住直到结束。这个问题丢给 Bossmod 脱战时跟随进行处理，但是我需要评估脱战接近敌人的稳定性。
             if not (PathfindInProgress() or PathIsRunning()) then --不在寻路中，等待3秒，如果目标xz不为0(约等于有目标)且不在咏唱状态，寻路到目标
                 yield("/wait 3.004")
                 local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
