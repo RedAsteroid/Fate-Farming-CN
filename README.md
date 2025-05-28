@@ -16,26 +16,49 @@ Fate Farming 脚本具有以下功能：
 
 相较于原版做了以下改动：
 - 新增支持 AEAssist 循环
-- 修改 MinWait 和 MaxWait 默认值，减少 FATE 完成后的等待时间
+- 修改 MinWait 和 MaxWait 默认值（3秒，4秒），以减少 FATE 完成后的等待时间
 - 额外奖励 FATE 提升为最高优先级
 - 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
-- 修复 DownTimeWaitAtNearestAetheryte 相关方法无法寻路到以太之光和寻路到以太之光模型内部的问题
+- 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
 - 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路
 - 将 Retainers 默认设置为 false，防止不在原始服务器时卡死
 - 改动 陆行鸟搭档 相关默认参数，以确保刷怪时血量相对健康
 - SelectNextZone 逻辑添加更多防御性检测(没用)
-- 调整多项 FATE 后处理任务延迟，防止执行时卡住
-- 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质任务的错误逻辑顺序
+- FATE 后处理任务添加延迟防止执行过快导致卡死
+- 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
 - 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
 - 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标的位置
 - 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
-- TeleportTo 逻辑增加空值/空字符串检查
+- TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
 
 一些其他注意事项：
 - 中国服务器当前版本为`7.15`，卫月核心只支持`API 11`版本插件，国际服`API 12`插件无法正常安装，下方的相关插件请自行搜索**旧版本**或**本地化版本**进行安装
 - SelectNextZone 逻辑中使用的方法可能与其他插件发生冲突导致游戏崩溃，具体表现为使用多地图脚本伐木时，传送到不同的地图后重新运行 Fate Farming 脚本时游戏崩溃。**已知与 Daily Routines 插件中的某些模块冲突，如果您需要多地图伐木，请考虑禁用插件，如果仍有崩溃发生请自行排查异常插件。**
 - 在中国服务器，比起考虑 FATE 伐木效率，您更应该关心无偿帮助 Game Master 举报您使用脚本刷 FATE 的玩家
 - 禁止倒卖本仓库的任何内容，如果你从闲鱼购买了这个脚本，不要找我当客服，滚去找你亲爱的倒狗野爹
+
+额外插件需求：
+
+### **Daily Routines**: 
+
+- 模块 `自动开始临危受命任务` 可以直接开始 NPC FATE，您可以移除掉一些因重名而注释或放入黑名单的 NPC FATE。  
+- 目前发现在动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖此插件，若不启用此插件，脚本将在检查到错误后停止运行。  
+- 这个错误一般会发生在 FATE 结束后脱战使用技能一类的功能，例如**画家脱战自动画画正好发起了传送**。  
+- 如果您**非常需要使用多地图伐木脚本**，请尽可能的禁用**含有脱战自动使用技能**的功能，并禁用 Daily Routines 插件防止崩溃。
+
+**Repository 仓库:**
+```
+https://github.com/AtmoOmen/DalamudPlugins
+```
+
+**加入 Discord 获取更多信息:**  
+
+```
+https://discord.gg/dailyroutines
+```
+
+**注意！脚本只是使用了插件中的功能，与插件本身无关联，不建议在 Discord 过度讨论，如果被禁言或者被踢出频道责任自负。  
+如有问题请优先在此仓库提交 issue。**
 
 ##  Something Need Doing 插件入门（SND）
 ![SND Basics](img/1.png)
@@ -57,6 +80,7 @@ Fate Farming 脚本具有以下功能：
 | BossMod Reborn <b>或</b> Veyn's BossMod | AI 功能用于躲避机制 | https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json<br>https://puni.sh/api/repository/veyn |
 | AutoRetainer | 在雇员就绪时处理雇员任务，然后返回 FATE 地图继续伐木 | https://love.puni.sh/ment.json |
 | Deliveroo | 在您的雇员带回太多物品堵塞物品栏时，向大国防联军提交装备 | https://plugins.carvel.li/ |
+| Daily Routines | 处理在动画锁中发起传送导致卡死 | https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json |
 
 ## 设置
 ### 脚本设置
