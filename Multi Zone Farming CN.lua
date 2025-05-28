@@ -47,14 +47,41 @@ ZonesToFarm =
 **************************************************************
 ]]
 
+StopScript = false
 CharacterCondition = {
     casting=27,
     betweenAreas=45
 }
 
+function EscapeTeleportStuckDR()
+    --检查 Daily Routines 插件是否启用，如果没有启用则停止循环，有则自动进出本
+    if not HasPlugin("DailyRoutines") then
+        LogInfo("[FATE] 准备处理传送卡死，但由于没有安装或启用 Daily Routines 插件此功能无法生效，脚本即将停止，感谢您的使用，祝您好运！")
+        yield("/e [FATE] 准备处理传送卡死，但由于没有安装或启用 Daily Routines 插件此功能无法生效，脚本即将停止，感谢您的使用，祝您好运！")
+        StopScript = true
+    else
+        LogInfo("[FATE] 准备处理传送卡死！")
+        yield("/e [FATE] 准备处理传送卡死！")
+
+        --功能启用初始化
+        yield("/pdr load AutoCommenceDuty")
+        yield("/pdr load AutoJoinExitDuty")
+
+        yield("/wait 1") --1秒延迟避免异常发生
+
+        -- 执行进出副本
+        yield("/pdr joinexitduty")
+    end
+end
+
 function TeleportTo(aetheryteName)
     yield("/tp "..aetheryteName)
     yield("/wait 1") -- wait for casting to begin
+
+    if IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "无法发动传送，其他传送正在进行。" then --使用 Daily Routines 插件处理卡顿，如果没安装则停用脚本
+        EscapeTeleportStuckDR()
+    end
+
     while GetCharacterCondition(CharacterCondition.casting) do
         yield("/wait 1")
     end
@@ -67,7 +94,7 @@ end
 
 FarmingZoneIndex = 1
 OldBicolorGemCount = GetItemCount(26807)
-while true do
+while StopScript == false do
     if not IsPlayerOccupied() and not IsMacroRunningOrQueued(FateMacro) then
         if GetCharacterCondition(2) or GetCharacterCondition(26) or GetZoneID() == ZonesToFarm[FarmingZoneIndex].zoneId then
             LogInfo("[MultiZone] Starting FateMacro")
