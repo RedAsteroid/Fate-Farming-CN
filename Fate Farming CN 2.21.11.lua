@@ -10,35 +10,40 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.4
+test4.5
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
-    基于提交6a0f6498da63ec853e8d1c865068ef552a75225a进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
+    基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
         1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0 版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
-        2. GetAetheryteList、GetAetherytesInZone、GetAetheryteName 如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 DR 冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑有可能导致游戏崩溃。
+        2. 对于 GetAetheryteList、GetAetherytesInZone、GetAetheryteName 等方法，如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 Daily Routines 插件冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑有可能导致游戏崩溃。
 
 以下是相较于原版进行的修改：
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
-    2. 修改 MinWait 和 MaxWait 默认值，减少 FATE 完成后的等待时间
+    2. 修改 MinWait 和 MaxWait 默认值（3秒，4秒），以减少 FATE 完成后的等待时间
     3. 额外奖励 FATE 提升为最高优先级
     4. 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
-    5. 修复 DownTimeWaitAtNearestAetheryte 相关逻辑无法寻路到以太之光和寻路到以太之光模型内部的问题
-    6. 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路
-    7. 将 Retainers 默认设置为 false，如果您需要收雇员请手动改为 true
+    5. 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
+    6. 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路（逻辑回滚）
+    7. Retainers 默认设置更改为 false，如果您需要收雇员请手动改为 true
     8. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
     9. SelectNextZone 添加更多防御性检测(其实没用)
-    10. FATE 后处理任务添加延迟防止执行过快卡死
+    10. FATE 后处理任务添加延迟防止执行过快导致卡死
     11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
-    12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标的位置
-    13. 修复 自己修理装备暗物质少于修理装备数量报错的判断，以及购买 8 级暗物质任务的错误逻辑顺序
+    12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标（或 FATE 中心）的位置
+    13. 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
     14. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
-    15. TeleportTo 逻辑增加空值/空字符串检查
+    15. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
         - 仓库地址：https://raw.githubusercontent.com/NiGuangOwO/DalamudPlugins/main/pluginmaster.json
     2. 如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本，但是请注意存在游戏崩溃问题
+    3. 请务必使用 Daily Routines 插件，其中的模块"自动开始临危受命任务"可以直接开始 NPC FATE，您可以移除掉一些因重名而注释或放入黑名单的 NPC FATE
+       即使插件与多地图伐木存在冲突也建议使用，目前发现在动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖此插件
+       请加入 Discord 获取插件相关信息
+       - Repository 仓库: https://github.com/AtmoOmen/DalamudPlugins
+       - Discord: https://discord.gg/dailyroutines
 
 绝对不要无人值守使用这个脚本，或者一天过长时间使用(比如每天刷20小时之类的)。
 使用前请务必检查设置是否符合您的运行环境，避免报错与卡死情况出现。
@@ -56,7 +61,7 @@ test4.4
                     - 新增 FatePriority 设置选项，默认行为与之前一致，但包含上述新检测逻辑。
                     - 优先级顺序：进度 → 额外奖励 → 剩余时间 → 距离。
                 新增等待位置设置
-                    - 当未找到 FATE 时，可选择是否在以太之光处等待（默认启用）。
+                    - 当未找到符合条件的 FATE 时，可选择是否在以太之光处等待（默认启用）。
                       若禁用，则会在上一个 FATE 完成的位置等待。
                 新增/调整等待时间设置
                     - 新增 MinWait（最小等待时间）设置，因原3秒等待有时过长。
@@ -98,6 +103,7 @@ test4.4
     -> AutoRetainer : (用于雇员管理 [雇员])   https://love.puni.sh/ment.json
     -> Deliveroo : (用于军队筹备提交 [提交])   https://plugins.carvel.li/
     -> YesAlready : (用于精制魔晶石)
+    -> Daily Routines : (用于处理传送卡死)  https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 ]]
@@ -110,7 +116,7 @@ test4.4
 ********************************************************************************
 ]]
 
---FATE 前设置
+--FATE 前处理设置
 Food                                = ""            --如果不想使用任何食物请留空，如果要使用高品质食物，请在名称旁添加<hq>标记，例如"烧烤暗色茄子 <hq>"。
 Potion                              = ""            --如果不想使用任何药水请留空。
 ShouldSummonChocobo                 = true          --是否召唤陆行鸟搭档？
@@ -122,13 +128,13 @@ FatePriority                        = {"Bonus", "Progress", "DistanceTeleport", 
 
 --FATE 战斗设置
 CompletionToIgnoreFate              = 80            --如果 FATE 进度已超过此百分比，则跳过（默认80%）
-MinTimeLeftToIgnoreFate             = 3*60          --如果 FATE 剩余时间少于此时长（秒），则跳过（默认3分钟）
+MinTimeLeftToIgnoreFate             = 3 * 60        --如果 FATE 剩余时间少于此时长（秒），则跳过（默认3分钟）
 CompletionToJoinBossFate            = 0             --如果 Boss FATE 进度低于此值，则跳过（用于避免单挑 Boss，默认0%）
     CompletionToJoinSpecialBossFates = 20           --用于特殊 Boss FATE（如"蛇王得酷热涅：荒野的死斗"或"亩鼠米卡：盛装巡游皆大欢喜"）的加入进度阈值（默认20%）
     ClassForBossFates               = ""            --如需为 Boss FATE 使用不同职业，请在此设置三字母职业缩写（如"PLD"）
                                                         --例如骑士，填入: "PLD"。
 JoinCollectionsFates                = true          --设置为 false，则永不参与收集型 FATE（默认true）
-BonusFatesOnly                      = false         --设置为 true，则仅完成额外奖励 FATE，忽略其他所有 FATE （默认false）
+BonusFatesOnly                      = false         --设置为 true，则仅完成额外奖励 FATE，忽略其他所有 FATE（默认false）
 
 MeleeDist                           = 2.5           --近战攻击距离（单位：码）。近战自动攻击的最大有效距离为 2.59 码，2.60 码会显示"目标在射程之外"
 RangedDist                          = 20            --远程攻击距离（单位：码）。远程技能和魔法的最大有效距离为 25.49 码，25.5 码会显示"目标在射程之外"
@@ -136,7 +142,7 @@ RangedDist                          = 20            --远程攻击距离（单�
 RotationPlugin                      = "None"        --选择使用的循环插件，可选：RSR/BMR/VBM/Wrath/AE/None
     RSRAoeType                      = "Full"        --RSR 的 AOE 技能类型选择，可选：Cleave/Full/Off
 
-    --（BMR/VBM/Wrath专用设置）
+    --（BMR/VBM/Wrath 专用设置）
     RotationSingleTargetPreset      = ""            --单目标预设名称（用于迷失者）。注意: 激活此预设时会自动关闭目标选择功能。
     RotationAoePreset               = ""            --AOE + buff 的预设名称。
     RotationHoldBuffPreset          = ""            --保留2分钟爆发技能在进度达到设定值时使用的预设名称。
@@ -146,7 +152,7 @@ DodgingPlugin                       = "BMR"         --选择躲避插件，可�
 IgnoreForlorns                      = false         --设置为 true，将忽略迷失者/迷失少女
     IgnoreBigForlornOnly            = false         --设置为 true，将只忽略迷失者
 
---FATE 后设置
+--FATE 后处理设置
 MinWait                             = 3             --执行下一个 FATE 前，上坐骑前的最小等待时间（秒）。
 MaxWait                             = 4             --执行下一个 FATE 前，上坐骑前的最大等待时间（秒）。
                                                         --实际等待时间将在最小值和最大值之间随机生成。
@@ -164,7 +170,7 @@ Retainers                           = false         --是否处理雇员探险�
 ShouldGrandCompanyTurnIn            = false         --是否向大国防联军提交筹备（需要 Deliveroo 插件支持，但是国服不能用）
     InventorySlotsLeft              = 5             --提交筹备前要求的最低剩余背包格数
 
-Echo                                = "All"         --选项: All/Gems/None 打印信息 All = 全部，Gems = 票据，None = 不打印
+Echo                                = "All"         --选项: All/Gems/None 打印信息（All = 全部，Gems = 票据，None = 不打印）
 
 CompanionScriptMode                 = false         --如果您需要将 FATE 脚本与其他配套脚本配合使用（如魂晶收集脚本 Atma Famer、多地图伐木脚本 Multi Zone Farming），请设置为 true。
 
@@ -243,6 +249,7 @@ setSNDProperty("StopMacroIfAddonNotVisible", false)
 --#region Data
 
 CharacterCondition = {
+    normalconditions=1,
     dead=2,
     mounted=4,
     inCombat=26,
@@ -897,7 +904,7 @@ FatesData = {
             },
             otherNpcFates= {
                 --{ fateName="顶击大貒猪", npcName="灵豹之民猎人" }, 2 npcs names same thing.... 开启DR"自动开始临危受命任务"可以取消这条黑名单
-                { fateName="血染利爪——米尤鲁尔", npcName="灵豹之民猎人" },
+                --{ fateName="血染利爪——米尤鲁尔", npcName="灵豹之民猎人" }, 2 npcs names same thing.... 开启DR"自动开始临危受命任务"可以取消这条黑名单
                 { fateName="辉鳞族不法之徒袭击事件", npcName="朵普罗族枪手" },
                 { fateName="守护秘药之战", npcName="霍比格族运货人" }
                 -- { fateName="致命螳螂", npcName="灵豹之民猎人" }, -- 2 npcs named same thing..... 开启DR"自动开始临危受命任务"可以取消这条黑名单
@@ -906,7 +913,7 @@ FatesData = {
                 "辉鳞族不法之徒袭击事件"
             },
             blacklistedFates= {
-                "圣树邪魔——坏死花" -- need check
+                --"圣树邪魔——坏死花" -- 能打，为什么原始表格要拉黑名单？
             }
         }
     },
@@ -1300,7 +1307,7 @@ end
 
 function DistanceFromClosestAetheryteToPoint(x, y, z, teleportTimePenalty)
     if not SelectedZone or not SelectedZone.aetheryteList then
-        yield("/e <获取水晶到 FATE> 无地图以太之光信息，重新获取当前地图水晶信息")
+        yield("/e <获取以太之光与 FATE 之间的距离> 无地图以太之光信息，重新获取当前地图水晶信息")
         SelectedZone = SelectNextZone()
         return math.maxinteger
     end
@@ -1316,7 +1323,7 @@ function DistanceFromClosestAetheryteToPoint(x, y, z, teleportTimePenalty)
         end
         local distanceAetheryteToFate = DistanceBetween(aetheryte.x, y, aetheryte.z, x, y, z)
         local comparisonDistance = distanceAetheryteToFate + teleportTimePenalty
-        LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance)) --发现问题 aetheryte.aetheryteName 可能是数字
+        LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance)) --Bug: aetheryte.aetheryteName 可能是数字或者为空，为什么？
 
         if comparisonDistance < closestTravelDistance then
             LogInfo("[FATE] Updating closest aetheryte to "..aetheryte.aetheryteName)
@@ -1348,7 +1355,7 @@ end
 function GetClosestAetheryte(x, y, z, teleportTimePenalty)
     if not SelectedZone or not SelectedZone.aetheryteList then
         yield("/e <获取最近水晶> 无地图以太之光信息，返回最大整数值 math.maxinteger")
-        return math.maxinteger  -- 或者返回一个默认值，或者抛出错误
+        return math.maxinteger  -- 或者返回一个默认值
     end
 
 
@@ -1438,6 +1445,33 @@ function AcceptNPCFateOrRejectOtherYesno()
     end
 end
 
+-- 只有使用 AEAssist 作为循环才会出现这种问题，因为其他acr脱战不画，AE脱战死也要画完
+-- ※如何主动触发传送卡死：使用野菜，然后狂点/tp命令的宏，你就会发现自己没法传送了！
+function EscapeTeleportStuckDR()
+    --检查 Daily Routines 插件是否启用，如果没有启用则停止循环，有则自动进出本
+    if not HasPlugin("DailyRoutines") then
+        LogInfo("[FATE] 准备处理传送卡死，但由于没有安装或启用 Daily Routines 插件此功能无法生效，脚本即将停止，感谢您的使用，祝您好运！")
+        yield("/e [FATE] 准备处理传送卡死，但由于没有安装或启用 Daily Routines 插件此功能无法生效，脚本即将停止，感谢您的使用，祝您好运！")
+        StopScript = true
+    else
+        LogInfo("[FATE] 准备处理传送卡死！")
+        yield("/e [FATE] 准备处理传送卡死！")
+
+        --功能启用初始化
+        yield("/pdr load AutoCommenceDuty")
+        yield("/pdr load AutoJoinExitDuty")
+
+        yield("/wait 1") --1秒延迟避免异常发生
+
+        -- 执行进出副本
+        yield("/pdr joinexitduty")
+    end
+end
+
+--Fatal Error：/tp 命令发起的传送会忽略动画锁，如果传送在动画锁内发起，极有可能在当前地图永久报错：无法发动传送，其他传送正在进行。
+--这个问题主要发生在使用 AEAssist 循环画家职业在脱战后画画，使用技能的动画锁正好与发起传送时间碰一起了，之后无法在当前地图再次发起传送。
+--SND没有相关的逻辑封装来处理这个问题，如果卡传送了，您可以重启游戏、回到标题、进出副本、切换地图来脱困。
+--使用 Daily Routines 插件的自动进出副本脱困是最简单的，也是我目前采用的方法，其实我希望不依靠DR脱困，以后再想。
 function TeleportTo(aetheryteName)
     -- 检查 aetheryteName 是否为空，如果为空则重新获取当前地图水晶并退出函数
     if aetheryteName == nil or aetheryteName == "" then
@@ -1454,8 +1488,28 @@ function TeleportTo(aetheryteName)
         yield("/wait 5.001")
     end
 
+    --[[if GetCharacterCondition(CharacterCondition.inCombat) then
+        LogInfo("[FATE] 处于战斗状态，中止传送任务")
+        yield("/e [FATE] 处于战斗状态，中止传送任务")
+        return
+    else
+        LogInfo("[FATE] 处于脱战状态，等待1秒后传送") --防止脱战窗口卡传送
+        yield("/e [FATE] 处于脱战状态，等待1秒后传送")
+        yield("/wait 1.001")
+        if GetCharacterCondition(CharacterCondition.inCombat) then
+            LogInfo("[FATE] 冷却后重新进入战斗状态，中止传送任务")
+            yield("/e [FATE] 冷却后重新进入战斗状态，中止传送任务")
+            return
+        end
+    end]]
+
     yield("/tp "..aetheryteName)
     yield("/wait 1") -- wait for casting to begin
+
+    if IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "无法发动传送，其他传送正在进行。" then --使用 Daily Routines 插件处理卡顿，如果没安装则停用脚本
+        EscapeTeleportStuckDR()
+    end
+
     while GetCharacterCondition(CharacterCondition.casting) do
         LogInfo("[FATE] Casting teleport...")
         yield("/wait 1")
@@ -1635,17 +1689,17 @@ function FlyBackToAetheryte()
         LogInfo("[FATE] ClosestAetheryte.y: "..closestAetheryte.y)
         if closestAetheryte ~= nil then
             SetMapFlag(SelectedZone.zoneId, closestAetheryte.x, closestAetheryte.y, closestAetheryte.z)
-            if (not GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) then --补充跳跃动作，防止寻路失败（起始点位于地底）
+            if (not GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) then --补充跳跃动作，防止寻路失败（起始点位于地底或异常的碰撞位置导致超长时间生成或失败）
             yield('/gaction 跳跃')
             yield('/wait 1')
             end
-            PathfindAndMoveTo(closestAetheryte.x, closestAetheryte.y + 15, closestAetheryte.z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --追加高度修正 15y，防止寻路到水晶模型内部
+            PathfindAndMoveTo(closestAetheryte.x, closestAetheryte.y + 15, closestAetheryte.z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --追加高度修正 15y，防止寻路到水晶模型内部，好像有点高？
         end
     end
 end
 
 function Mount()
-    if GetCharacterCondition(CharacterCondition.mounted) then
+    if GetCharacterCondition(CharacterCondition.mounted) then --AEAssist 画家ACR脱战自动画画会导致下方wait防御失效，导致游戏内报错"无法发动传送，其他传送正在进行。"锁死。
         yield("/wait 1") -- wait a second to make sure you're firmly on the mount
         State = CharacterState.moveToFate
         LogInfo("[FATE] State Change: MoveToFate")
@@ -1790,11 +1844,10 @@ function MoveToFate()
     -- upon approaching fate, pick a target and switch to pathing towards target
     if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 60 then
         if HasTarget() then
-            LogInfo("[FATE] Found FATE target, immediate rerouting. No! wait 0.5 second plz!")
-                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则经过冷却后寻路到目标，但是日志中经常建立寻路失败
+            LogInfo("[FATE] Found FATE target, immediate rerouting.")
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则经过冷却后寻路到目标，但是经常因为地形问题或距离目标过近导致建立飞行寻路失败，如果发生则会在飞往 FATE 中心位置中途降落（一般在 FATE 偏外围位置）。
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生异常。
                 --所以我想针对 NPC 类型 FATE，最好是保证在一个绝对能安全降落的位置进行降落，这个位置有很多，比如：FATE 中心较近内再选目标降落，距离 NPC 一个很近的位置降落
-                --yield("/wait 2") --不可以！
                 State = CharacterState.interactWithNpc
                 LogInfo("[FATE] State Change: Interact with npc")
             -- if GetTargetName() == CurrentFate.npcName then
@@ -1870,7 +1923,7 @@ function MoveToFate()
         nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(CurrentFate.x, CurrentFate.y, CurrentFate.z, 10)
     end
 
-    if (GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 and not GetCharacterCondition(CharacterCondition.flying))  then -- 补充缺失的动作，在寻路到FATE前跳跃进入飞行状态，如果没有这一步会导致寻路起点可能在地底
+    if (GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 and not GetCharacterCondition(CharacterCondition.flying))  then -- 补充缺失的动作，在寻路到 FATE 前跳跃进入飞行状态，如果没有这一步会导致寻路起点可能在地底一类的异常位置
         yield("/gaction 跳跃")
         yield("/wait 1")
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying)
@@ -1952,7 +2005,7 @@ function CollectionsFateTurnIn()
             MoveToNPC()
         elseif (PathfindInProgress() or PathIsRunning()) then
             local now = os.clock()
-            if now - LastStuckCheckTime > 10 then -- 10 秒内移动距离小于 3 则执行接下来逻辑
+            if now - LastStuckCheckTime > 10 then -- 10 秒内移动距离小于 3 则执行接下来逻辑，但这个逻辑好像不对，会在任务之外触发…… 虽然不影响整体运行
                 local x = GetPlayerRawXPos()
                 local y = GetPlayerRawYPos()
                 local z = GetPlayerRawZPos()
@@ -2384,7 +2437,7 @@ function DoFate()
     GemAnnouncementLock = false
 
     -- switches to targeting forlorns for bonus (if present)
-    if not IgnoreForlorns then
+    if not IgnoreForlorns then --值得一提的是，如果把陆行鸟或者玩家名称改名为 迷失少女/迷失者，会选到它们，一般只有小警察(bot hunter)会这么干，您可以尝试使用 visibility 插件(主库)屏蔽它们
         yield("/target 迷失少女")
         if not IgnoreBigForlornOnly then
             yield("/target 迷失者")
@@ -2430,15 +2483,15 @@ function DoFate()
     if not GetCharacterCondition(CharacterCondition.inCombat) then --条件：脱战状态
         if HasTarget() then --条件：选中目标
             local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
-            if GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius()) then --条件：与目标距离 小于等于(<=) 最大攻击距离+目标碰撞体积。即目标处于攻击距离内，可以攻击目标的情况 
+            if GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius()) then --条件：与目标距离 小于等于(<=) 最大攻击距离 + 目标碰撞体积。即目标处于攻击距离内，可以攻击目标的情况 
                 if PathfindInProgress() or PathIsRunning() then --条件：正在寻路。任务：停止寻路，冷却 3.002 秒后执行后续代码
                     yield("/vnav stop")
                     yield("/wait 3.002") -- wait 5s before inching any closer // Maybe it won't take that long
-                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1+碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。
-                    PathfindAndMoveTo(x, y, z) --备注：这个距离是三维距离，可能不会优先于下方的错误提示通过判断，但能正常复位，有bug了再说.jpg
+                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1 + 碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。
+                    PathfindAndMoveTo(x, y, z)
                     yield("/wait 1") -- inch closer by 1s
                 end
-            elseif IsAddonVisible("_TextError") then --主要是为了处理距离外持续尝试使用技能的循环插件，即 AEAssist，理论上这个逻辑不是必要的
+            elseif IsAddonVisible("_TextError") then --主要是为了处理距离外持续尝试使用技能的循环插件，这个问题出现在 AEAssist，特意增加的
                 -- 优先处理错误提示（看不到目标、目标在射程之外）
                 local errorText = GetNodeText("_TextError", 1)
                 if errorText == "看不到目标。" then
@@ -2457,7 +2510,7 @@ function DoFate()
                 if (x ~= 0 and z~=0 and not GetCharacterCondition(CharacterCondition.inCombat)) and not GetCharacterCondition(CharacterCondition.casting) then --条件：目标xz不为0，脱战状态。任务：寻路到目标
                     PathfindAndMoveTo(x, y, z)
                 end
-            elseif (PathfindInProgress() or PathIsRunning()) then --处理被地形障碍卡住的情况
+            elseif (PathfindInProgress() or PathIsRunning()) then --处理被地形障碍卡住的情况，简单来说专用于脱战时，选中目标但是寻路过程中被什么东西卡住了，尝试跳一下。如果在战斗中寻路到另一个较远的敌人时被什么玩意卡住了，并且无法进入射程内，不会触发这个任务进行脱困！本想使用错误提示判断但不知为何不行！
                 local now = os.clock()
                 if now - LastStuckCheckTime > 3 then -- 3 秒内移动距离小于 1 则执行接下来逻辑
                     local x1,y1,z1 = GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos()
@@ -2687,7 +2740,7 @@ function ExecuteBicolorExchange()
             GetDistanceToPoint(shopX, shopY, shopZ) > (DistanceBetween(SelectedBicolorExchangeData.miniAethernet.x, SelectedBicolorExchangeData.miniAethernet.y, SelectedBicolorExchangeData.miniAethernet.z, shopX, shopY, shopZ) + 10) then
             LogInfo("Distance to shopkeep is too far. Using mini aetheryte.")
             yield("/li "..SelectedBicolorExchangeData.miniAethernet.name)
-            yield("/wait 5") -- give it a moment to register 过短延迟会导致连续使用命令卡死
+            yield("/wait 5") -- give it a moment to register 过短延迟会导致连续使用命令卡死，这里完全是等待传送后 UI 恢复，如果你的计算机配置特别特别特别差或者发生了极端卡顿，依旧会卡死
             return
         elseif IsAddonVisible("TelepotTown") then
             LogInfo("TelepotTown open")
@@ -3004,6 +3057,7 @@ MovingAnnouncementLock = false
 SuccessiveInstanceChanges = 0
 LastInstanceChangeTimestamp = 0
 LastTeleportTimeStamp = 0
+TeleportToCATimeStamp = 0
 GotCollectionsFullCredit = false -- needs 7 items for  full
 -- variable to track collections fates that you have completed but are still active.
 -- will not leave area or change instance if value ~= 0
