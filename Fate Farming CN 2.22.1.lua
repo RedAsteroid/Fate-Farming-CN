@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.6
+test4.7
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
@@ -25,16 +25,15 @@ test4.6
     3. 额外奖励 FATE 提升为最高优先级
     4. 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
     5. 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
-    6. 移动到 FATE 位置时如果角色未处于飞行状态，将尝试跳跃后再执行寻路（逻辑回滚）
-    7. Retainers 默认设置更改为 false，如果您需要收雇员请手动改为 true
-    8. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
-    9. SelectNextZone 添加更多防御性检测(其实没用)
-    10. FATE 后处理任务添加延迟防止执行过快导致卡死
-    11. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
-    12. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标（或 FATE 中心）的位置
-    13. 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
-    14. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
-    15. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
+    6. Retainers 默认设置更改为 false，如果您需要收雇员请手动改为 true
+    7. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
+    8. SelectNextZone 添加更多防御性检测(其实没用)
+    9. FATE 后处理任务添加延迟防止执行过快导致卡死
+    10. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
+    11. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标（或 FATE 中心）的位置
+    12. 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
+    13. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
+    14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
