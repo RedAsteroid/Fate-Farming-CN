@@ -2,7 +2,7 @@
 
 ********************************************************************************
 *                                Fate Farming                                  *
-*                               Version 2.21.13                                *
+*                               Version 2.22.1                                *
 ********************************************************************************
 
 作者: pot0to (https://ko-fi.com/pot0to)
@@ -10,13 +10,14 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.5
+test4.6
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
         1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0 版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
         2. 对于 GetAetheryteList、GetAetherytesInZone、GetAetheryteName 等方法，如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 Daily Routines 插件冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑有可能导致游戏崩溃。
+        3. 请求添加 LuaFunctions 逻辑 public unsafe bool IsAnimationLocked() => Player.IsAnimationLocked;
 
 以下是相较于原版进行的修改：
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
@@ -49,7 +50,10 @@ test4.5
 使用前请务必检查设置是否符合您的运行环境，避免报错与卡死情况出现。
 以下更新日志仅为原始版本的翻译。
 
-    -> 2.21.13  为 FlyBackToAetheryte 逻辑新增更多日志记录。
+    -> 2.22.1   修复命令 /vnav flag 与 /vnav moveflag 的选择使用条件
+                更新: MoveToFate 逻辑改为导航到 flag 位置，此方法在新月岛表现更佳。
+                更新: 阻止 TextAdvance 信息刷屏。
+                为 FlyBackToAetheryte 逻辑新增更多日志记录。
                     新增了上坐骑后 1 秒的等待时间，确保玩家完全处于骑乘状态。
                     某些语言版本（如中文）的日志和默语处理速度比英文版更快，
                     导致系统过早触发下一步寻路，此时玩家尚未完成上坐骑，仍处于跳跃过程中。
@@ -225,7 +229,9 @@ elseif RotationPlugin == "VBM" and DodgingPlugin ~= "VBM"  then
     DodgingPlugin = "VBM"
 end
 
-yield("/at y")
+if not CompanionScriptMode then --如果使用配套脚本，/at y 命令将由配套脚本进行控制
+    yield("/at y")
+end
 
 --snd property
 function setSNDProperty(propertyName, value)
@@ -1863,15 +1869,12 @@ function MoveToFate()
             return
         else
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and not IsInFate() then --NPC 类型 FATE，不在 FATE 范围内，选择 NPC（应用于还未激活的 NPC FATE）
-                --yield("/e Debug 1")
                 yield("/target "..CurrentFate.npcName)
             elseif (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and IsInFate() then --NPC 类型 FATE，在 FATE 范围内，距离寻路终点小于 25，选择敌人 （应用于已经激活的 NPC FATE）
                 if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then --如此设计会导致 NPC 类型 FATE 降落位置更靠近 FATE 中心，从而让角色更容易拉到一大群怪（生存能力不强的 DPS 不能快速清怪有暴毙风险，但相比无法脱困算可以接受）
-                    --yield("/e Debug 2")
                     TargetClosestFateEnemy()
                 end
             elseif not (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --非 NPC 类型 FATE，忽略是否在 FATE 范围内，选择敌人 （这是原先的 else 条件，应用于普通 FATE。实际上不限定在 FATE 内执行会导致一些 FATE 更容易降落在边缘）
-                --yield("/e Debug 3")
                 TargetClosestFateEnemy()
             end
             yield("/wait 0.5") -- give it a moment to make sure the target sticks
@@ -1923,12 +1926,25 @@ function MoveToFate()
         nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(CurrentFate.x, CurrentFate.y, CurrentFate.z, 10)
     end
 
-    if (GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 and not GetCharacterCondition(CharacterCondition.flying))  then -- 补充缺失的动作，在寻路到 FATE 前跳跃进入飞行状态，如果没有这一步会导致寻路起点可能在地底一类的异常位置
+    --此为旧方法，另外需要评估新方法稳定性
+    --[[if (GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 and not GetCharacterCondition(CharacterCondition.flying))  then -- 补充缺失的动作，在寻路到 FATE 前跳跃进入飞行状态，如果没有这一步会导致寻路起点可能在地底一类的异常位置
         yield("/gaction 跳跃")
         yield("/wait 1")
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying)
     elseif (GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 and GetCharacterCondition(CharacterCondition.flying)) then
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying)
+    else
+        State = CharacterState.middleOfFateDismount
+    end]]
+
+    if GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 then --此新方法在 AtmoOmen 维护的 vnavmesh 插件工作正常，尚未发现地底寻路问题，但我需要更多样本去评估稳定性
+        if HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying then
+            yield("/vnav flyflag")
+        else
+            yield("/vnav moveflag")
+        end
+        -- LogInfo("[FATE] Moving to: "..nearestLandX..", "..nearestLandY.." "..nearestLandZ..", "..tostring(HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying))
+        -- PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying)
     else
         State = CharacterState.middleOfFateDismount
     end
