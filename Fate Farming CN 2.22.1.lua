@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.7
+test4.8
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
@@ -23,14 +23,14 @@ test4.7
     1. 新增支持 AEAssist 循环，如需使用请在设置中更改
     2. 修改 MinWait 和 MaxWait 默认值（3秒，4秒），以减少 FATE 完成后的等待时间
     3. 额外奖励 FATE 提升为最高优先级
-    4. 减少了接近敌人逻辑的等待时间（5秒 → 3秒）
-    5. 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
-    6. Retainers 默认设置更改为 false，如果您需要收雇员请手动改为 true
-    7. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
-    8. SelectNextZone 添加更多防御性检测(其实没用)
-    9. FATE 后处理任务添加延迟防止执行过快导致卡死
-    10. 调整 FATE 进行时对敌寻路逻辑（新增处理：目标在射程之外、看不到目标、寻路时被地形障碍卡住）
-    11. 调整 移动到 FATE 任务的选中NPC/怪物的逻辑，避免降落到无法脱离的障碍地形，再次修改现在会降落在更接近目标（或 FATE 中心）的位置
+    4. 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
+    5. Retainers 默认设置更改为 false，如果您需要收雇员请手动改为 true
+    6. 改动 陆行鸟搭档 相关参数，以确保刷怪时血量相对健康
+    7. SelectNextZone 添加更多防御性检测(其实没用)
+    8. FATE 后处理任务添加延迟防止执行过快导致卡死
+    9. 大幅调整 MoveToFate 逻辑，现在会更加精准快速地抵达 FATE 位置
+    10. 大幅调整 DoFate 逻辑，选择目标与处理阻挡/距离异常逻辑将更加迅速
+    11. 调整 HandleUnexpectedCombat 的冷却周期，减少发呆时间
     12. 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
     13. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
     14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
@@ -869,10 +869,10 @@ FatesData = {
                 { fateName="千年孤独", continuationIsBoss=true }
             },
             blacklistedFates= {
-                "只有爆炸", -- 无法寻路
+                --"只有爆炸", -- 能打
                 "狼之家族", -- 存在多个 佩鲁佩鲁族的旅行商人 npc，能否与正确npc交互开始FATE存在随机性，开启DR"自动开始临危受命任务"可以取消这条黑名单（佩鲁佩鲁的旅行商人）
                 "飞天魔厨——佩鲁的天敌", -- 存在多个 佩鲁佩鲁族的旅行商人 npc，开启DR"自动开始临危受命任务"可以取消这条黑名单（佩鲁佩鲁的旅行商人）
-                "跃动的火热——山火" -- FATE周围有石头挡着，AI 躲避会日墙无限抽搐
+                "跃动的火热——山火" -- FATE周围有石头挡着，AI 躲避会日墙无限抽搐，但是能打得过就是很脚本
             }
         }
     },
@@ -895,7 +895,7 @@ FatesData = {
             },
             fatesWithContinuations = {},
             blacklistedFates= {
-                "打鼹鼠行动", -- need check
+                --"打鼹鼠行动", -- 地形烂，但不至于打不了
                 "横征暴敛？" -- 存在多个 佩鲁佩鲁族旅行商人 npc，开启DR"自动开始临危受命任务"可以取消这条黑名单（佩鲁佩鲁的旅行商人）
             }
         }
@@ -918,7 +918,7 @@ FatesData = {
                 "辉鳞族不法之徒袭击事件"
             },
             blacklistedFates= {
-                --"圣树邪魔——坏死花" -- 能打，为什么原始表格要拉黑名单？
+                --"圣树邪魔——坏死花" -- 能打，不清楚为什么原始表格要拉黑名单
             }
         }
     },
@@ -938,7 +938,9 @@ FatesData = {
                 { fateName="蛇王得酷热涅：狩猎的杀手锏", npcName="夕阳尚红 布鲁克·瓦" }, -- need check
                 { fateName="神秘翼龙荒野奇谈", npcName="佩鲁佩鲁族旅行商人" }, --wiki 有误，已修正
             },
-            fatesWithContinuations = {},
+            fatesWithContinuations = {
+                "蛇王得酷热涅：狩猎前的准备" -- 这是一个收集类 FATE
+            },
             specialFates = {
                 "蛇王得酷热涅：荒野的死斗" -- 得酷热涅
             },
@@ -1847,10 +1849,12 @@ function MoveToFate()
     end
 
     -- upon approaching fate, pick a target and switch to pathing towards target
-    if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 60 then
+    -- FATE 半径大概 40 y，按照原来的 60 y，如果角色在距离 FATE 60y 之内，并且距离 NPC > 50y，会卡死，因为降落依据于选中的目标，大于 50y 则永远选不中
+    -- 直接规定距离 FATE 40y 内进行目标操作，为什么原始设计处处要尽量在 FATE 边缘降落
+    if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 40 then
         if HasTarget() then
             LogInfo("[FATE] Found FATE target, immediate rerouting.")
-                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) --有目标则经过冷却后寻路到目标，但是经常因为地形问题或距离目标过近导致建立飞行寻路失败，如果发生则会在飞往 FATE 中心位置中途降落（一般在 FATE 偏外围位置）。
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --这里异常的一点是：默认地面寻路(?)导致寻路失败。但一般使用时是飞行寻路，反正我改了暂时没发现问题。
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生异常。
                 --所以我想针对 NPC 类型 FATE，最好是保证在一个绝对能安全降落的位置进行降落，这个位置有很多，比如：FATE 中心较近内再选目标降落，距离 NPC 一个很近的位置降落
                 State = CharacterState.interactWithNpc
@@ -1861,16 +1865,20 @@ function MoveToFate()
             --     State = CharacterState.middleOfFateDismount
             --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
             else
-                yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置，实测表现还行
-                State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态。但问题是有可能在 FATE 范围外选中目标，然后降落到 FATE 外，ACR 如果不停的使用技能读条会导致寻路立刻被中止角色动弹不得
-                LogInfo("[FATE] State Change: MiddleOfFateDismount")
+                --yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置，实测表现还行，最好是与目标为一定距离后再降落，比如5或者10
+                --根据距离判断下坐骑
+                if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) < 10 then --确保 3D 距离小于 10 再下坐骑，这里针对普通 FATE 降落，由于触发存在周期，几乎每次都在目标脚底下降落
+                    State = CharacterState.middleOfFateDismount
+                    LogInfo("[FATE] State Change: MiddleOfFateDismount")
+                end
+                --State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态。但问题是有可能在 FATE 范围外选中目标，然后降落到 FATE 外，ACR 如果不停的使用技能读条会导致寻路立刻被中止角色动弹不得
             end
             return
         else
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and not IsInFate() then --NPC 类型 FATE，不在 FATE 范围内，选择 NPC（应用于还未激活的 NPC FATE）
                 yield("/target "..CurrentFate.npcName)
             elseif (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and IsInFate() then --NPC 类型 FATE，在 FATE 范围内，距离寻路终点小于 25，选择敌人 （应用于已经激活的 NPC FATE）
-                if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then --如此设计会导致 NPC 类型 FATE 降落位置更靠近 FATE 中心，从而让角色更容易拉到一大群怪（生存能力不强的 DPS 不能快速清怪有暴毙风险，但相比无法脱困算可以接受）
+                if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then -- 改动了降落逻辑，现在会更早寻路到目标并在距离目标10的距离才触发降落
                     TargetClosestFateEnemy()
                 end
             elseif not (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --非 NPC 类型 FATE，忽略是否在 FATE 范围内，选择敌人 （这是原先的 else 条件，应用于普通 FATE。实际上不限定在 FATE 内执行会导致一些 FATE 更容易降落在边缘）
@@ -1936,7 +1944,7 @@ function MoveToFate()
         State = CharacterState.middleOfFateDismount
     end]]
 
-    if GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 then --此新方法在 AtmoOmen 维护的 vnavmesh 插件工作正常，尚未发现地底寻路问题，但我需要更多样本去评估稳定性
+    if GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 then --此新方法在 AtmoOmen 维护的 vnavmesh 插件工作正常，尚未发现地底寻路问题，但我需要更多样本去评估稳定性，同时也推荐国服玩家优先用这个版本
         if HasFlightUnlocked(SelectedZone.zoneId) and SelectedZone.flying then
             yield("/vnav flyflag")
         else
@@ -2036,7 +2044,7 @@ function CollectionsFateTurnIn()
             end
         end
     else
-        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回，7 个物品是最低金牌要求，单人数值的收集任务需要提交 18 个完成 
+        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回，7 个物品是最低金牌要求，单人数值的收集任务需要提交 18 个左右完成 
             GotCollectionsFullCredit = true
         end
 
@@ -2350,7 +2358,7 @@ function HandleUnexpectedCombat()
         if not (PathfindInProgress() or PathIsRunning()) then
             PathfindAndMoveTo(GetPlayerRawXPos(), GetPlayerRawYPos() + 10, GetPlayerRawZPos(), true)
         end
-        yield("/wait 10")
+        yield("/wait 3") --减少在坐骑上时发生意外战斗的等待时间。一般在移动到FATE过程中拉到野怪触发
         return
     end
 
@@ -2499,33 +2507,26 @@ function DoFate()
         if HasTarget() then --条件：选中目标
             local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
             if GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius()) then --条件：与目标距离 小于等于(<=) 最大攻击距离 + 目标碰撞体积。即目标处于攻击距离内，可以攻击目标的情况 
-                if PathfindInProgress() or PathIsRunning() then --条件：正在寻路。任务：停止寻路，冷却 3.002 秒后执行后续代码
+                if PathfindInProgress() or PathIsRunning() then --条件：正在寻路。任务：停止寻路，冷却 2.002 秒后执行后续代码
                     yield("/vnav stop")
-                    yield("/wait 3.002") -- wait 5s before inching any closer // Maybe it won't take that long
-                elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1 + 碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。
+                    yield("/wait 2.002") -- wait 5s before inching any closer // Maybe it won't take that long
+                --elseif (GetDistanceToTarget() > (1 + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then -- never move into hitbox 条件：与目标距离 大于(>) 1 + 碰撞体积 并且 角色不在咏唱状态。任务：寻路到目标，冷却 1 秒后执行后续代码。画家频繁离开画魔纹的元凶，似乎是作为射程外/看不到目标的替代方案，但在实际运行中没什么必要性，反而会让读条职业乱跑发呆。
+                elseif (GetDistanceToTarget() > (MaxDistance + GetTargetHitboxRadius())) and not GetCharacterCondition(CharacterCondition.casting) then --二次检查是否在射程距离内，是否不在咏唱状态，如果是则固定寻路 1 秒接近，几乎没有机会触发这个条件。
                     PathfindAndMoveTo(x, y, z)
                     yield("/wait 1") -- inch closer by 1s
-                end
-            elseif IsAddonVisible("_TextError") then --主要是为了处理距离外持续尝试使用技能的循环插件，这个问题出现在 AEAssist，特意增加的
-                -- 优先处理错误提示（看不到目标、目标在射程之外）
-                local errorText = GetNodeText("_TextError", 1)
-                if errorText == "看不到目标。" then
-                    LogInfo("[FATE] 看不到目标，尝试寻路修正")
-                    yield("/e [FATE] 看不到目标，尝试寻路修正")
+                elseif IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "看不到目标。" then --通常发生在被石头|棍母挡住的情况
+                    LogInfo("[FATE] 看不到目标，尝试寻路修正(脱战)")
+                    yield("/e [FATE] 看不到目标，尝试寻路修正(脱战)")
                     PathfindAndMoveTo(x, y, z)
                     yield("/wait 1.501")
-                elseif errorText == "目标在射程之外。" then
-                    LogInfo("[FATE] 目标在射程之外，尝试寻路修正")
-                    yield("/e [FATE] 目标在射程之外，尝试寻路修正")
-                    PathfindAndMoveTo(x, y, z)
-                    yield("/wait 2.001")
+                    return --退出函数，否则会陷入无限循环
                 end
             elseif not (PathfindInProgress() or PathIsRunning()) then --条件：非寻路状态
                 yield("/wait 3.003") -- give 5s for enemy AoE casts to go off before attempting to move closer // change to 3.003s 冷却 3.003 秒
-                if (x ~= 0 and z~=0 and not GetCharacterCondition(CharacterCondition.inCombat)) and not GetCharacterCondition(CharacterCondition.casting) then --条件：目标xz不为0，脱战状态。任务：寻路到目标
+                if (x ~= 0 and z~=0 and not GetCharacterCondition(CharacterCondition.inCombat)) and not GetCharacterCondition(CharacterCondition.casting) then --条件：目标xz不为0，脱战状态。任务：寻路到目标。用于脱战状态下周期性的非读条状态接近，对于画家来说还行。
                     PathfindAndMoveTo(x, y, z)
                 end
-            elseif (PathfindInProgress() or PathIsRunning()) then --处理被地形障碍卡住的情况，简单来说专用于脱战时，选中目标但是寻路过程中被什么东西卡住了，尝试跳一下。如果在战斗中寻路到另一个较远的敌人时被什么玩意卡住了，并且无法进入射程内，不会触发这个任务进行脱困！本想使用错误提示判断但不知为何不行！
+            elseif (PathfindInProgress() or PathIsRunning()) then --处理被地形障碍卡住的情况，简单来说专用于脱战时，选中目标但是寻路过程中被什么东西卡住了，尝试跳一下。如果在战斗中寻路到另一个较远的敌人时被什么玩意卡住了，并且无法进入射程内，不会触发这个任务进行脱困！
                 local now = os.clock()
                 if now - LastStuckCheckTime > 3 then -- 3 秒内移动距离小于 1 则执行接下来逻辑
                     local x1,y1,z1 = GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos()
@@ -2548,16 +2549,25 @@ function DoFate()
             end
         end
     else --条件：战斗状态
-        if HasTarget() and (GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius())) then --有目标，与目标距离在攻击范围内。战斗中可能会遇到0距离被树、石头之类的阻挡导致"看不到目标"，但是AI一般会复位这种情况。
+        if HasTarget() and IsAddonVisible("_TextError") and GetNodeText("_TextError", 1) == "看不到目标。" then --尝试处理战斗中看不到目标
+            local x1,y1,z1 = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
+            LogInfo("[FATE] 看不到目标，尝试寻路修正(战斗中)")
+            yield("/e [FATE] 看不到目标，尝试寻路修正(战斗中)")
+            PathfindAndMoveTo(x1, y1, z1)
+            yield("/wait 1.501")
+            return --退出函数，否则会陷入无限循环
+        elseif HasTarget() and (GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius())) then --有目标，与目标距离在攻击范围内。
             if PathfindInProgress() or PathIsRunning() then --条件：寻路中。任务：中止寻路。
                 yield("/vnav stop")
             end
         elseif not CurrentFate.isBossFate then --当前 FATE 为非 Boss FATE    如果迷失少女刷新在 Boss FATE 并且不在射程之内，可能会导致玩家什么都做不了，直到被Boss的AoE赶到攻击范围内，或者卡住直到结束。这个问题丢给 Bossmod 脱战时跟随进行处理，但是我需要评估脱战接近敌人的稳定性。
-            if not (PathfindInProgress() or PathIsRunning()) then --不在寻路中，等待3秒，如果目标xz不为0(约等于有目标)且不在咏唱状态，寻路到目标
-                yield("/wait 3.004")
-                local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
-                if (x ~= 0 and z~=0)  and not GetCharacterCondition(CharacterCondition.casting) then
-                    PathfindAndMoveTo(x,y,z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying)
+            if not (PathfindInProgress() or PathIsRunning()) then --不在寻路中，等待2秒，如果目标xz不为0(约等于有目标)且不在咏唱状态，寻路到目标。但这不够严谨！假设普通 FATE 在多个怪物战斗，读条职业处于瞬发技能期间，会寻路然后在下一轮dofate立刻停止移动从而发生不必要的移动。
+                if (GetDistanceToTarget() > (MaxDistance + GetTargetHitboxRadius())) then --补充条件：与目标距离大于攻击范围，即射程外，固定寻路 2.004 秒后接近目标敌人
+                    local x,y,z = GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()
+                    if (x ~= 0 and z~=0)  and not GetCharacterCondition(CharacterCondition.casting) then
+                        PathfindAndMoveTo(x,y,z, GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying)
+                    end
+                    yield("/wait 2.004")
                 end
             end
         end
