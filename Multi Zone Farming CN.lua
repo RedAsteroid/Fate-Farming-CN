@@ -101,7 +101,7 @@ while StopScript == false do
             LogInfo("[MultiZone] Starting FateMacro")
             yield("/snd run "..FateMacro)
             repeat
-                yield("/wait 3")
+                yield("/wait 1") --等待太久了，缩短时间
             until not IsMacroRunningOrQueued(FateMacro)
             LogInfo("[MultiZone] FateMacro has stopped")
             NewBicolorGemCount = GetItemCount(26807)
