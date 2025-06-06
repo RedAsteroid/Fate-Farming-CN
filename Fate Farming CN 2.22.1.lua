@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.8
+test4.9
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
@@ -34,13 +34,14 @@ test4.8
     12. 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
     13. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
     14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
+    15. 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
         - 仓库地址：https://raw.githubusercontent.com/NiGuangOwO/DalamudPlugins/main/pluginmaster.json
     2. 如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本，但是请注意存在游戏崩溃问题
     3. 请务必使用 Daily Routines 插件，其中的模块"自动开始临危受命任务"可以直接开始 NPC FATE，您可以移除掉一些因重名而注释或放入黑名单的 NPC FATE
-       即使插件与多地图伐木存在冲突也建议使用，目前发现在动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖此插件
+       即使插件与多地图伐木存在冲突也建议使用，目前发现在此插件启用时，动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖也此插件
        请加入 Discord 获取插件相关信息
        - Repository 仓库: https://github.com/AtmoOmen/DalamudPlugins
        - Discord: https://discord.gg/dailyroutines
@@ -1774,6 +1775,12 @@ function MiddleOfFateDismount()
             end
         end
     else
+        if not IsInFate() then
+            LogInfo("[FATE] FATE 区域内下坐骑任务意外在 FATE 范围外，尝试寻路接近 FATE")
+            yield("/e [FATE] FATE 区域内下坐骑任务意外在 FATE 范围外，尝试寻路接近 FATE")
+            PathfindAndMoveTo(CurrentFate.x, CurrentFate.y, CurrentFate.z, GetCharacterCondition(CharacterCondition.flying))
+            yield("/wait 2.005")
+        end
         TargetClosestFateEnemy()
     end
 end
@@ -1850,24 +1857,28 @@ function MoveToFate()
 
     -- upon approaching fate, pick a target and switch to pathing towards target
     -- FATE 半径大概 40 y，按照原来的 60 y，如果角色在距离 FATE 60y 之内，并且距离 NPC > 50y，会卡死，因为降落依据于选中的目标，大于 50y 则永远选不中
-    -- 直接规定距离 FATE 40y 内进行目标操作，为什么原始设计处处要尽量在 FATE 边缘降落
+    -- 直接规定距离 FATE 40y 内进行目标操作
     if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 40 then
         if HasTarget() then
             LogInfo("[FATE] Found FATE target, immediate rerouting.")
                 PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying) --这里异常的一点是：默认地面寻路(?)导致寻路失败。但一般使用时是飞行寻路，反正我改了暂时没发现问题。
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --目标为 NPC 类型 FATE时，执行降落逻辑。但是有个问题：降落到障碍地形（目标之间有阻碍，有高低差的杂乱地形）会导致角色完全无法脱离。举例：遗产之地左下降落到房屋废墟完全无法脱离，添加延迟确保寻路到怪物位置缓解问题影响，但是极端情况下仍会发生异常。
                 --所以我想针对 NPC 类型 FATE，最好是保证在一个绝对能安全降落的位置进行降落，这个位置有很多，比如：FATE 中心较近内再选目标降落，距离 NPC 一个很近的位置降落
-                State = CharacterState.interactWithNpc
-                LogInfo("[FATE] State Change: Interact with npc")
-            -- if GetTargetName() == CurrentFate.npcName then
-            --     State = CharacterState.interactWithNpc
-            -- elseif GetTargetFateID() == CurrentFate.fateId then
-            --     State = CharacterState.middleOfFateDismount
-            --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
+                if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) > 5 and not (PathIsRunning() or PathfindInProgress()) then --对于 NPC FATE 如果距离目标 >5 且不在寻路状态则重定向寻路到目标，只在距离 <5 时执行后续 NPC 交互处理。注意此处不管选中NPC还是敌人，都是期望与目标距离小于 5 时再执行后续步骤。
+                    PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying) and SelectedZone.flying)
+                elseif GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) < 5 then --距离目标 <5 时进入交互状态。
+                    State = CharacterState.interactWithNpc
+                    LogInfo("[FATE] State Change: Interact with npc")
+                    -- if GetTargetName() == CurrentFate.npcName then
+                    --     State = CharacterState.interactWithNpc
+                    -- elseif GetTargetFateID() == CurrentFate.fateId then
+                    --     State = CharacterState.middleOfFateDismount
+                    --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
+                end
             else
                 --yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置，实测表现还行，最好是与目标为一定距离后再降落，比如5或者10
                 --根据距离判断下坐骑
-                if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) < 10 then --确保 3D 距离小于 10 再下坐骑，这里针对普通 FATE 降落，由于触发存在周期，几乎每次都在目标脚底下降落
+                if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) < 5 then --确保 3D 距离小于 5 再下坐骑，这里针对普通 FATE 降落，主要为了防止掉沟里
                     State = CharacterState.middleOfFateDismount
                     LogInfo("[FATE] State Change: MiddleOfFateDismount")
                 end
@@ -1877,10 +1888,10 @@ function MoveToFate()
         else
             if (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and not IsInFate() then --NPC 类型 FATE，不在 FATE 范围内，选择 NPC（应用于还未激活的 NPC FATE）
                 yield("/target "..CurrentFate.npcName)
-            elseif (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and IsInFate() then --NPC 类型 FATE，在 FATE 范围内，距离寻路终点小于 25，选择敌人 （应用于已经激活的 NPC FATE）
-                if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 25 then -- 改动了降落逻辑，现在会更早寻路到目标并在距离目标10的距离才触发降落
+            elseif (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) and IsInFate() then --NPC 类型 FATE，在 FATE 范围内，距离寻路终点小于 40，选择敌人 （应用于已经激活的 NPC FATE），但是对于连续型 FATE 且为 NPC FATE，这 25 会导致玩家原地不动，因此区分是否在坐骑上
+                --if GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) < 40 then -- 弃用，只要在 FATE 范围内就尝试选择目标
                     TargetClosestFateEnemy()
-                end
+                --end
             elseif not (CurrentFate.isOtherNpcFate or CurrentFate.isCollectionsFate) then --非 NPC 类型 FATE，忽略是否在 FATE 范围内，选择敌人 （这是原先的 else 条件，应用于普通 FATE。实际上不限定在 FATE 内执行会导致一些 FATE 更容易降落在边缘）
                 TargetClosestFateEnemy()
             end
@@ -2663,7 +2674,7 @@ function Ready()
     elseif not LogInfo("[FATE] Ready -> SummonChocobo") and ShouldSummonChocobo and GetBuddyTimeRemaining() <= ResummonChocoboTimeLeft and
         (not shouldWaitForBonusBuff or GetItemCount(4868) > 0) then
         State = CharacterState.summonChocobo
-    elseif not LogInfo("[FATE] Ready -> NextFate nil") and NextFate == nil then
+    elseif not LogInfo("[FATE] Ready -> NextFate nil") and NextFate == nil then --?
         if EnableChangeInstance and GetZoneInstance() > 0 and not shouldWaitForBonusBuff then
             State = CharacterState.changingInstances
             LogInfo("[FATE] State Change: ChangingInstances")
@@ -2673,7 +2684,7 @@ function Ready()
                 StopScript = true
                 LogInfo("[FATE] StopScript: Ready")
             else
-                LogInfo("[FATE] Waiting for fate rewards")
+                LogInfo("[FATE] Waiting for fate rewards(ChangingZone)")
             end
         elseif (not HasTarget() or GetTargetName() ~= "以太之光" or GetDistanceToTarget() > 20) and DownTimeWaitAtNearestAetheryte then
             State = CharacterState.flyBackToAetheryte
@@ -2687,7 +2698,7 @@ function Ready()
             StopScript = true
             LogInfo("[FATE] StopScript: DidFate")
         else
-            LogInfo("[FATE] Waiting for fate rewards")
+            LogInfo("[FATE] Waiting for fate rewards(Didfate)")
         end
     elseif not LogInfo("[FATE] Ready -> MovingToFate") then -- and ((CurrentFate == nil) or (GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then
         CurrentFate = NextFate
