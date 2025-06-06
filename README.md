@@ -35,6 +35,7 @@
 - **调整 HandleUnexpectedCombat 的冷却周期，减少发呆时间**
 - 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
 - TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
+- 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
 </details>
 
 ---
