@@ -36,6 +36,8 @@
 - 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
 - TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
 - 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
+- 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 落地的效率，稳定性待评估（已测试 7.0 地图，如发现异常后续回滚）
+- 修改 Ready 逻辑中 MovingToFate 部分的条件判断，避免收集型 FATE 在意外达到 100% 时不会前往下一个 FATE
 </details>
 
 ---
