@@ -10,7 +10,7 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test4.9
+test5.0
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
@@ -35,6 +35,8 @@ test4.9
     13. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
     14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
     15. 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
+    16. 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 落地的效率，稳定性待评估（已测试 7.0 地图，如发现异常后续回滚）
+    17. 修改 Ready 逻辑中 MovingToFate 部分的条件判断，避免收集型 FATE 在意外达到 100% 时不会前往下一个 FATE
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
@@ -1706,9 +1708,10 @@ function FlyBackToAetheryte()
     end
 end
 
+--脚本中只有3处引用，分别是无FATE飞回水晶、移动到FATE、切换分线。移除延迟后也能正常工作，以及异常复位。
 function Mount()
-    if GetCharacterCondition(CharacterCondition.mounted) then --AEAssist 画家ACR脱战自动画画会导致下方wait防御失效，导致游戏内报错"无法发动传送，其他传送正在进行。"锁死。
-        yield("/wait 1") -- wait a second to make sure you're firmly on the mount
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        --yield("/wait 1") -- wait a second to make sure you're firmly on the mount 测试必要性，movetofate逻辑自带大约 0.2s + 脚本循环的 0.1s 延迟
         State = CharacterState.moveToFate
         LogInfo("[FATE] State Change: MoveToFate")
     else
@@ -1718,7 +1721,7 @@ function Mount()
             yield('/mount "' .. MountToUse)
         end
     end
-    yield("/wait 1")
+    --yield("/wait 1") --冷却(默认值1)，似乎是为了防止被重复触发，但似乎不必要。
 end
 
 function Dismount()
@@ -1973,7 +1976,7 @@ function InteractWithFateNpc()
         yield("/vnav stop")
         State = CharacterState.doFate
         LogInfo("[FATE] State Change: DoFate")
-        yield("/wait 1") -- give the fate a second to register before dofate and lsync
+        --yield("/wait 1") -- give the fate a second to register before dofate and lsync 非必要延迟，lsync在dofate逻辑内，在这里加延迟会更稳定吗？如果要加延迟希望在 0.5s 以下
     elseif not IsFateActive(CurrentFate.fateId) then
         State = CharacterState.ready
         LogInfo("[FATE] State Change: Ready")
@@ -2061,7 +2064,7 @@ function CollectionsFateTurnIn()
 
         yield("/vnav stop")
         yield("/interact")
-        yield("/wait 3")
+        yield("/wait 2") --冷却（默认值3），不想发呆太久，2s 足够处理提交了
 
         if GetFateProgress(CurrentFate.fateId) < 100 then
             TurnOnCombatMods()
@@ -2700,7 +2703,8 @@ function Ready()
         else
             LogInfo("[FATE] Waiting for fate rewards(Didfate)")
         end
-    elseif not LogInfo("[FATE] Ready -> MovingToFate") then -- and ((CurrentFate == nil) or (GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then
+    elseif not LogInfo("[FATE] Ready -> MovingToFate") or ((GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then -- and ((CurrentFate == nil) or (GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then
+        -- 补充条件：处理收集类 FATE 100% 时，避免下一个 FATE 在当前 FATE 等待结算期间时刷新在原地干等。注释部分原先就有，现在已验证有效性
         CurrentFate = NextFate
         SetMapFlag(SelectedZone.zoneId, CurrentFate.x, CurrentFate.y, CurrentFate.z)
         State = CharacterState.moveToFate
