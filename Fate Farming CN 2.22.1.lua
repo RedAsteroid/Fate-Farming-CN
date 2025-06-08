@@ -10,13 +10,13 @@
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
 汉化: RedAsteroid
-test5.0
+test5.1
 
 注意: 这是一个还未完成的汉化版，可能还有地方没有适配
     基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
     目前存在以下问题。
         1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0 版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
-        2. 对于 GetAetheryteList、GetAetherytesInZone、GetAetheryteName 等方法，如有其他进程同时访问 AetheryteList，会引发空引用异常导致游戏崩溃。这个问题主要发生在多地图伐木，已知与 Daily Routines 插件冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑有可能导致游戏崩溃。
+        2. GetAetherytesInZone() 等方法存在多线程访问崩溃问题，这个问题主要发生在多地图伐木，已知与 Daily Routines 插件冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑可能导致游戏崩溃。
         3. 请求添加 LuaFunctions 逻辑 public unsafe bool IsAnimationLocked() => Player.IsAnimationLocked;
 
 以下是相较于原版进行的修改：
@@ -36,20 +36,24 @@ test5.0
     14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
     15. 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
     16. 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 落地的效率，稳定性待评估（已测试 7.0 地图，如发现异常后续回滚）
-    17. 修改 Ready 逻辑中 MovingToFate 部分的条件判断，避免收集型 FATE 在意外达到 100% 时不会前往下一个 FATE
+    17. 修复 多地图伐木的场景下，FATE 完成时的逻辑缺失，解决收集类 FATE 进度 100% 时不会前往下一个 FATE 的问题 
 
 一些其他事项：
     1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
         - 仓库地址：https://raw.githubusercontent.com/NiGuangOwO/DalamudPlugins/main/pluginmaster.json
     2. 如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本，但是请注意存在游戏崩溃问题
-    3. 请务必使用 Daily Routines 插件，其中的模块"自动开始临危受命任务"可以直接开始 NPC FATE，您可以移除掉一些因重名而注释或放入黑名单的 NPC FATE
-       即使插件与多地图伐木存在冲突也建议使用，目前发现在此插件启用时，动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖也此插件
+    3. 推荐单地图伐木场景使用 Daily Routines 插件，其中的模块 "自动开始临危受命任务" 可以直接开始 NPC FATE，您可以移除掉一些因重名而注释或放入黑名单的 NPC FATE
+       目前发现在此插件启用时，动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖也此插件
+       (单地图伐木可使用 DR 不会崩溃，多地图伐木请关闭 DR 避免崩溃)
        请加入 Discord 获取插件相关信息
        - Repository 仓库: https://github.com/AtmoOmen/DalamudPlugins
        - Discord: https://discord.gg/dailyroutines
 
 绝对不要无人值守使用这个脚本，或者一天过长时间使用(比如每天刷20小时之类的)。
 使用前请务必检查设置是否符合您的运行环境，避免报错与卡死情况出现。
+如果你不想被交易，请查看 README 文档中的解决方法或开启 Daily Routines 插件的 "自动取消交易" 模块
+如果你想要尝试此脚本的极致效率，MinWait 和 MaxWait 可改 0.1 和 0.11，但是为保证稳定性不默认预设这个参数
+
 以下更新日志仅为原始版本的翻译。
 
     -> 2.22.1   修复命令 /vnav flag 与 /vnav moveflag 的选择使用条件
@@ -2702,9 +2706,17 @@ function Ready()
             LogInfo("[FATE] StopScript: DidFate")
         else
             LogInfo("[FATE] Waiting for fate rewards(Didfate)")
+
+            --多地图伐木漏洞：FATE 完成后如果是收集型 FATE 达到 100%，再次进入 Ready 逻辑时，此分支将被占用，导致无法移动到下个 FATE，直到 FATE 结束。通常为收集类 FATE 100% 后准备离开时引战小怪导致。
+            --（多地图伐木完成 FATE 时的专属处理）补充 FATE 进度为 100%，且下个 FATE 存在，那么执行寻路到下个 FATE，而不是原地干等。
+            if (GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil then
+                CurrentFate = NextFate
+                SetMapFlag(SelectedZone.zoneId, CurrentFate.x, CurrentFate.y, CurrentFate.z)
+                State = CharacterState.moveToFate
+                LogInfo("[FATE] State Change: MovingtoFate(Multi Zone) "..CurrentFate.fateName)
+            end
         end
-    elseif not LogInfo("[FATE] Ready -> MovingToFate") or ((GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then -- and ((CurrentFate == nil) or (GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then
-        -- 补充条件：处理收集类 FATE 100% 时，避免下一个 FATE 在当前 FATE 等待结算期间时刷新在原地干等。注释部分原先就有，现在已验证有效性
+    elseif not LogInfo("[FATE] Ready -> MovingToFate") then -- and ((CurrentFate == nil) or (GetFateProgress(CurrentFate.fateId) == 100) and NextFate ~= nil) then
         CurrentFate = NextFate
         SetMapFlag(SelectedZone.zoneId, CurrentFate.x, CurrentFate.y, CurrentFate.z)
         State = CharacterState.moveToFate
