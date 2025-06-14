@@ -3,12 +3,20 @@
 
 适配中国服务器客户端使用
 
+### 脚本文件导航：
+
+- [Fate Farming (主脚本)](https://github.com/RedAsteroid/Fate-Farming-CN/blob/main/Fate%20Farming%20CN%202.22.2.lua)
+
+- [Multi Zone Farming (多地图伐木)](https://github.com/RedAsteroid/Fate-Farming-CN/blob/main/Multi%20Zone%20Farming%20CN.lua)
+
+- [Anima Luminous Crystal Farming (魂武流光水晶伐木)](https://github.com/RedAsteroid/Fate-Farming-CN/blob/main/Anima%20Luminous%20Crystal%20Farming%20CN.lua)
+
 ### Fate Farming 脚本具有以下功能：
 
 - 在双色宝石接近上限时，自动兑换两种新旧版本的 **「双色宝石收据」**
 - FATE 优先级系统: 额外奖励 > 最高进度 > 距离水晶最近的 FATE > 剩余时间 > 距离玩家最近的 FATE
 - FATE 期间出现 **「迷失少女/迷失者」** 时进行优先处理
-- 支持处理所有类型的 FATE，包括 NPC 收集物品 FATE
+- 支持处理所有类型的 FATE(护送任务并不能)，包括 NPC 收集物品 FATE
 - 角色死亡后自动复活并返回 FATE 地图继续进行伐木
 - 当前地图无可用 FATE 时自动尝试切换副本区域
 - 可自动处理雇员任务和军队筹备，完成后返回 FATE 地图继续进行伐木
@@ -22,22 +30,23 @@
 <summary><strong>点击展开</strong></summary>
 
 - 新增支持 AEAssist 循环
-- 修改 MinWait 和 MaxWait 默认值（3秒，4秒），以减少 FATE 完成后的等待时间
+- 修改 MinWait 和 MaxWait 默认值（3秒，4秒），减少 FATE 完成后的等待时间
 - 额外奖励 FATE 提升为最高优先级
 - 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
 - 将 Retainers 默认设置为 false，防止不在原始服务器时卡死
 - 改动 陆行鸟搭档 相关默认参数，以确保刷怪时血量相对健康
 - SelectNextZone 逻辑添加更多防御性检测(没用)
 - FATE 后处理任务添加延迟防止执行过快导致卡死
-- 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
+- 修复 暗物质少于待修理装备数量时报错，购买 `8级暗物质` 的错误逻辑顺序
 - **大幅调整 MoveToFate 逻辑，现在会更加精准快速地抵达 FATE 位置**
 - **大幅调整 DoFate 逻辑，选择目标与处理阻挡/距离异常逻辑将更加迅速**
 - **调整 HandleUnexpectedCombat 的冷却周期，减少发呆时间**
 - 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
 - TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
 - 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
-- 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 落地的效率，稳定性待评估（已测试 7.0 地图，如发现异常后续回滚）
+- 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 的落地效率
 - 修复 多地图伐木的场景下，FATE 完成时的逻辑缺失，解决收集类 FATE 进度 100% 时不会前往下一个 FATE 的问题
+- 补充 3.0 FATE 表信息，版本内所有 `特殊FATE` 与 `成就FATE` 加入黑名单，**支持魂武流光水晶伐木**
 </details>
 
 ---
