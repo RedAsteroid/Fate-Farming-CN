@@ -2,26 +2,27 @@
 
 ********************************************************************************
 *                                Fate Farming                                  *
-*                               Version 2.22.1                                *
+*                               Version 2.22.2                                 *
 ********************************************************************************
 
 作者: pot0to (https://ko-fi.com/pot0to)
 贡献者: Prawellp, Mavi, Allison
 状态机图: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/FateFarmingStateMachine.drawio.png
 原始来源: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming/Fate%20Farming.lua
-汉化: RedAsteroid
-test5.1
+汉化仓库: https://github.com/RedAsteroid/Fate-Farming-CN
+汉化者: RedAsteroid
+test5.2
 
-注意: 这是一个还未完成的汉化版，可能还有地方没有适配
-    基于原始仓库提交 6a0f6498da63ec853e8d1c865068ef552a75225a 进行修改，同时参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
-    目前存在以下问题。
-        1. FATE 表格完全未校对可用性，只对遗产之地/夏劳尼荒野进行测试，2.0-4.0 版本的 FATE 可用性仍需验证，您可以使用其他完成度更高的汉化版本的表格进行覆盖
-        2. GetAetherytesInZone() 等方法存在多线程访问崩溃问题，这个问题主要发生在多地图伐木，已知与 Daily Routines 插件冲突，请禁用插件后再进行多地图伐木，否则每次切图后相关逻辑可能导致游戏崩溃。
-        3. 请求添加 LuaFunctions 逻辑 public unsafe bool IsAnimationLocked() => Player.IsAnimationLocked;
+简介:
+    - 此脚本基于 pot0to 的 Fate Farming.lua 进行适配与修改使其适配中国服务器客户端 ，也参考了 https://github.com/Bread-Sp/Fate-Farming-CN-Client- 的更改内容
+    - 仍存在问题：脚本无法处理护送任务，2.0 - 4.0 版本的地图 FATE 未核对适配情况
 
-以下是相较于原版进行的修改：
-    1. 新增支持 AEAssist 循环，如需使用请在设置中更改
-    2. 修改 MinWait 和 MaxWait 默认值（3秒，4秒），以减少 FATE 完成后的等待时间
+    感谢 @pot0to 创造了如此优秀的脚本与设计方案！
+    感谢 Daily Routines 群友在适配阶段提供测试与各位大佬的技术支持！
+
+修改内容: 
+    1. 新增支持 AEAssist 循环
+    2. 修改 MinWait 和 MaxWait 默认值（3秒，4秒），减少 FATE 完成后的等待时间
     3. 额外奖励 FATE 提升为最高优先级
     4. 修复 FlyBackToAetheryte 逻辑无法寻路到以太之光以及寻路到以太之光模型内部的问题
     5. Retainers 默认设置更改为 false，如果您需要收雇员请手动改为 true
@@ -31,32 +32,62 @@ test5.1
     9. 大幅调整 MoveToFate 逻辑，现在会更加精准快速地抵达 FATE 位置
     10. 大幅调整 DoFate 逻辑，选择目标与处理阻挡/距离异常逻辑将更加迅速
     11. 调整 HandleUnexpectedCombat 的冷却周期，减少发呆时间
-    12. 修复 自己修理装备时暗物质少于待修理装备导致卡死的问题，以及购买8级暗物质任务的错误逻辑顺序
+    12. 修复 暗物质少于待修理装备数量时报错，购买 8级暗物质 的错误逻辑顺序
     13. 允许 Bossmod / Bossmod Reborn 脱战时跟随在战斗逻辑中启用
-    14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离传送卡死，必须启用 Daily Routines 插件否则在检测到传送卡死后脚本将停止运行
+    14. TeleportTo 逻辑增加空值/空字符串检查，新增逻辑用于脱离 Daily Routines 插件由于兼容性导致的传送卡死
     15. 补充 FATE 进行时，意外在 FATE 范围外上坐骑后的复位逻辑
-    16. 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 落地的效率，稳定性待评估（已测试 7.0 地图，如发现异常后续回滚）
-    17. 修复 多地图伐木的场景下，FATE 完成时的逻辑缺失，解决收集类 FATE 进度 100% 时不会前往下一个 FATE 的问题 
+    16. 移除了 InteractWithFateNpc、Mount 逻辑的延迟，大幅提高移动到 FATE 与 NPC FATE 的落地效率
+    17. 修复 多地图伐木的场景下，FATE 完成时的逻辑缺失，解决收集类 FATE 进度 100% 时不会前往下一个 FATE 的问题
+    18. 补充 3.0 FATE 表信息，版本内所有 特殊FATE 与 成就FATE 已加入黑名单，支持魂武流光水晶伐木
 
-一些其他事项：
-    1. 推荐使用逆光喵仓库的 Bossmod / Bossmod Reborn，此版本 AI 功能跟随不会绑定循环当然也不支持循环，记得清理残留配置文件如果您之前安装了其他版本的 vbm / bmr
+插件兼容性问题: 
+    1. 如需使用 BossMod / BossModReborn 插件的循环功能，请安装 44451516 维护的 BossMod / BossModReborn 插件
+        - 仓库链接: https://raw.githubusercontent.com/44451516-ff14/BossmodRebornCN/main/pluginmaster.json
+
+       如不想使用 BossMod / BossModReborn 插件的循环功能，请安装 逆光喵 维护的 BossMod / BossModReborn 插件，并清理插件配置确保循环功能彻底阉割
         - 仓库地址：https://raw.githubusercontent.com/NiGuangOwO/DalamudPlugins/main/pluginmaster.json
-    2. 如果您想多地图进行 FATE 伐木，请添加 Multi Zone Farming 脚本，设置好相关参数后再运行 Multi Zone Farming 脚本，但是请注意存在游戏崩溃问题
-    3. 推荐单地图伐木场景使用 Daily Routines 插件，其中的模块 "自动开始临危受命任务" 可以直接开始 NPC FATE，您可以移除掉一些因重名而注释或放入黑名单的 NPC FATE
-       目前发现在此插件启用时，动画锁内发起传送会导致当前地图无法再发起传送，这是一项严重错误，脱困逻辑依赖也此插件
-       (单地图伐木可使用 DR 不会崩溃，多地图伐木请关闭 DR 避免崩溃)
-       请加入 Discord 获取插件相关信息
+
+       原因: BossMod / BossModReborn 插件的 AI 模块"脱战时跟随"绑定循环，导致在使用其他循环插件工作时争夺技能使用控制权
+
+    2. 使用任何 配套脚本 进行切换地图的 FATE 伐木时，务必禁用 Daily Routines 插件，否则每次在切换地图脚本重新运行时一定概率游戏崩溃
+       单地图伐木可使用 Daily Routines 插件，决定开始运行时尽量避开 Daily Routines 在切换地图后访问 AetheryteList 的时间区间防止发生崩溃
+
+    3. Daily Routines 插件有许多便利的模块:
+        - 自动开始临危受命任务 
+            直接开始 NPC FATE，开启后可以移除 FATE 开始 NPC 因重名问题而注释或加入黑名单的 FATE(如果没进黑名单，FATE 开始了也会去打)
+        - 自动取消交易
+            处理小警察的交易请求
+        - 自动临危受命
+            Daily Routines 插件的自动 FATE 脚本模块，无兼容问题、高效且不需要拼好挂，刷双色非常推荐尝试这个方案而非此脚本
+
+       请加入 Discord 获取插件详细信息，但不要过度讨论有关这个 SND 脚本的内容
        - Repository 仓库: https://github.com/AtmoOmen/DalamudPlugins
        - Discord: https://discord.gg/dailyroutines
 
-绝对不要无人值守使用这个脚本，或者一天过长时间使用(比如每天刷20小时之类的)。
-使用前请务必检查设置是否符合您的运行环境，避免报错与卡死情况出现。
-如果你不想被交易，请查看 README 文档中的解决方法或开启 Daily Routines 插件的 "自动取消交易" 模块
-如果你想要尝试此脚本的极致效率，MinWait 和 MaxWait 可改 0.1 和 0.11，但是为保证稳定性不默认预设这个参数
+安全使用守则推荐:
+    1. 不要无人值守
+    2. 不要一天25小时挂着
+    3. 不在事件的风口浪尖顶风作案
+    4. 警惕小警察录屏
+    5. 不要在任何地方承认使用外挂或者脚本(除非自己能保证规避或不在意风险)
+
+    自动 FATE 有明确的封号案例，
+    已知的案例发生在小号集群、人口大区(鸟猫)，小警察录屏反而没有明确的后续查封。
+    汉化者在鬼服大区刷完 10000 FATE 成就无事发生，24 小时不间断刷的同行一个多月后依然健在，与封号反馈对不上。
+    所以基于个人经历认为风险集中于人多的大区和小号针对，虽然身边统计学不严谨，但规避明面上的风险总不会错的。
+
+    上述5条只是建议，这种无聊重复的玩法肯定少不了无人值守且每天挂很长时间。
+    刷双色建议遗产之地、夏劳尼荒野双地图，或者遗产之地单地图(荒野单刷可能无法净空地图回到遗产之地导致效率下降)，职业选择画家(绘灵法师)，陆行鸟治疗战术维持血线。
+    单刷遗产之地参考收益 1 小时近似 450 - 550 双色宝石(可能会超出这个区间)，20 - 30 FATE 数量。
+    如果有同行在一张地图持续刷不跑路效率更高，相反打了就跑 FATE 血量、击杀数、收集量增加等等会导致效率急剧下降。
+    小鸣鼠角笛 ≈ 2500 - 3000 FATE，所需时间 ≈ 100 - 120 小时
+
+    【运行前请检查设置，默认配置可能不适配用户的运行环境与需求导致运行出错或无法运行】
 
 以下更新日志仅为原始版本的翻译。
 
-    -> 2.22.1   修复命令 /vnav flag 与 /vnav moveflag 的选择使用条件
+    -> 2.22.2   新增选项：死亡后自动返回可设置为禁用
+                修复命令 /vnav flag 与 /vnav moveflag 的选择使用条件
                 更新: MoveToFate 逻辑改为导航到 flag 位置，此方法在新月岛表现更佳。
                 更新: 阻止 TextAdvance 信息刷屏。
                 为 FlyBackToAetheryte 逻辑新增更多日志记录。
@@ -179,6 +210,8 @@ ShouldExtractMateria                = true          --是否进行精制魔晶�
 Retainers                           = false         --是否处理雇员探险？（如果您不在原始服务器请设置为 false，否则会卡死）
 ShouldGrandCompanyTurnIn            = false         --是否向大国防联军提交筹备（需要 Deliveroo 插件支持，但是国服不能用）
     InventorySlotsLeft              = 5             --提交筹备前要求的最低剩余背包格数
+
+ReturnOnDeath                       = true          --角色死亡后是否确认自动返回（默认true）
 
 Echo                                = "All"         --选项: All/Gems/None 打印信息（All = 全部，Gems = 票据，None = 不打印）
 
@@ -479,9 +512,20 @@ FatesData = {
         zoneId = 397,
         fatesList= {
             collectionsFates= {},
-            otherNpcFates= {},
-            fatesWithContinuations = {},
-            blacklistedFates= {}
+            otherNpcFates= {
+                { fateName="巡礼骑士", npcName="巡礼骑士" },
+                { fateName="年轻龙骑士——阿莱姆贝", npcName="圣菲内雅连队的骑兵" },
+                { fateName="功绩掠夺者——卑鄙的维尔纳", npcName="直率的博多内" }
+            },
+            fatesWithContinuations = {
+                { fateName="黑铁桥之战", continuationIsBoss=true },
+                { fateName="白雪茫茫", continuationIsBoss=true },
+                { fateName="讨伐龙之眷属", continuationIsBoss=true },
+                { fateName="年轻龙骑士——阿莱姆贝", continuationIsBoss=false }
+            },
+            blacklistedFates= {
+                "吞噬牦牛的巨人——巨脚雪人", -- 成就 FATE 数值怪，单刷必死
+            }
         }
     },
     {
@@ -498,10 +542,23 @@ FatesData = {
         zoneName = "阿巴拉提亚云海",
         zoneId = 401,
         fatesList= {
-            collectionsFates= {},
-            otherNpcFates= {},
-            fatesWithContinuations = {},
-            blacklistedFates= {}
+            collectionsFates= {
+                { fateName="天空之云", npcName="年轻的尊杜人" },
+            },
+            otherNpcFates= {
+                { fateName="突飞猛进", npcName="云顶蔷薇骑兵" },
+                { fateName="逃亡者", npcName="逃亡的尊杜奴隶" }
+            },
+            fatesWithContinuations = {
+                { fateName="冠恐鸟窝破坏命令", continuationIsBoss=true },
+                { fateName="逃亡者", continuationIsBoss=false },
+                { fateName="云神祭司——凯那瓦努", continuationIsBoss=false },
+                { fateName="凯那瓦努的弟子们", continuationIsBoss=true }
+            },
+            blacklistedFates= {
+                "逃亡者", -- 护送任务
+                "暴食人形岩——大地饕餮" -- 成就 FATE 数值怪，单刷必死
+            }
         }
     },
     {
@@ -509,22 +566,44 @@ FatesData = {
         zoneId = 402,
         fatesList= {
             collectionsFates= {},
-            otherNpcFates= {},
-            fatesWithContinuations = {},
-            blacklistedFates= {}
+            otherNpcFates= {
+                { fateName="错误报告199号", npcName="检查系统" }
+            },
+            fatesWithContinuations = {
+                { fateName="全自动手工业", continuationIsBoss=true }
+            },
+            specialFates = {
+                "太古威胁 夜光花歼灭战" --夜光花特殊fate
+            },
+            blacklistedFates= {
+                "太古威胁 夜光花歼灭战" --夜光花特殊fate，不打
+            }
         }
     },
     {
         zoneName = "龙堡参天高地",
         zoneId = 398,
         fatesList= {
-            collectionsFates= {},
-            otherNpcFates= {},
-            fatesWithContinuations = {},
-            specialFates = {
-                "幻影女王——长须豹女王" --长须豹
+            collectionsFates= {
+                { fateName="不灭之箭", npcName="尾羽集落的猎人" }
             },
-            blacklistedFates= {}
+            otherNpcFates= {
+                { fateName="芳香四溢", npcName="散发醇香的莫西·匹克" }
+            },
+            fatesWithContinuations = {
+                { fateName="敌人的敌人还是敌人", continuationIsBoss=true }
+            },
+            specialFates = {
+                "雷兽女王——长须豹女王", --长须豹
+                "幻影女王——长须豹女王", --长须豹
+                "逆袭女王——长须豹女王" --长须豹             
+            },
+            blacklistedFates= {
+                "雷兽女王——长须豹女王", --长须豹
+                "幻影女王——长须豹女王", --长须豹
+                "逆袭女王——长须豹女王", --长须豹 
+                "坚甲铁龙——塔拉斯克" --成就 FATE 数值怪，单刷必死
+            }
         }
     },
     {
@@ -532,20 +611,51 @@ FatesData = {
         zoneId=399,
         tpZoneId = 478,
         fatesList= {
-            collectionsFates= {},
-            otherNpcFates= {},
-            fatesWithContinuations = {},
-            blacklistedFates= {}
+            collectionsFates= {
+                { fateName="珍惜古书", npcName="视书如命 布罗菲克斯" },
+                { fateName="恶魔机器", npcName="多面玲珑 斯里克崔克斯" }
+            },
+            otherNpcFates= {
+                { fateName="使魔不好当", npcName="马洛·罗格" }, -- 护送任务，黑名单
+            },
+            fatesWithContinuations = {
+                { fateName="哥布林纷争", continuationIsBoss=true },
+                { fateName="恶魔机器", continuationIsBoss=false }
+                --{ fateName="复仇者们", continuationIsBoss=true }, -- 成就 FATE 前置，无视
+            },
+            blacklistedFates= {
+                "全面改造机——3号哥布林装甲J型", --成就 FATE 数值怪，单刷必死
+                "使魔不好当" --护送任务
+            }
         }
     },
     {
         zoneName = "翻云雾海",
         zoneId=400,
         fatesList= {
-            collectionsFates= {},
-            otherNpcFates= {},
-            fatesWithContinuations = {},
-            blacklistedFates= {}
+            collectionsFates= {
+                { fateName="莫古力赚钱之道", npcName="追求时尚的莫古力" }
+            },
+            otherNpcFates= {
+                { fateName="古恐龙再见", npcName="小顽童 莫古希" },
+                { fateName="云海小顽童——莫古希", npcName="优等生 莫古珀" },
+                { fateName="永不衰退的吸引力", npcName="滔滔不绝的莫古力" }, --护送任务，黑名单
+                { fateName="天极白垩宫防卫战 救助幼龙", npcName="天极幼龙" },
+                { fateName="夜与雾", npcName="法亚拉" },
+                { fateName="圣与邪的扭曲", npcName="天极幼龙" }
+            },
+            fatesWithContinuations = {
+                { fateName="火尾飞蜥大军", continuationIsBoss=false },
+                { fateName="与龙共舞", continuationIsBoss=false },
+                { fateName="暗鳞黑龙征讨战 白龙支援", continuationIsBoss=false },
+                { fateName="暗鳞黑龙征讨战 追击作战", continuationIsBoss=false }
+                --{ fateName="暗鳞黑龙征讨战 决战", continuationIsBoss=true }, --成就 FATE 前置，无视
+            },
+            blacklistedFates= {
+                "永不衰退的吸引力", --护送任务
+                "暗鳞黑龙征讨战 决战", --防御，成就任务，不知道血量情况
+                "苍天白龙——维德佛尔尼尔" --成就 FATE 数值怪，单刷必死
+            }
         }
     },
     {
@@ -879,7 +989,7 @@ FatesData = {
                 --"只有爆炸", -- 能打
                 "狼之家族", -- 存在多个 佩鲁佩鲁族的旅行商人 npc，能否与正确npc交互开始FATE存在随机性，开启DR"自动开始临危受命任务"可以取消这条黑名单（佩鲁佩鲁的旅行商人）
                 "飞天魔厨——佩鲁的天敌", -- 存在多个 佩鲁佩鲁族的旅行商人 npc，开启DR"自动开始临危受命任务"可以取消这条黑名单（佩鲁佩鲁的旅行商人）
-                "跃动的火热——山火" -- FATE周围有石头挡着，AI 躲避会日墙无限抽搐，但是能打得过就是很脚本
+                "跃动的火热——山火" -- FATE周围有石头挡着，AI 躲避会日墙无限抽搐，但是能打得过
             }
         }
     },
@@ -902,7 +1012,7 @@ FatesData = {
             },
             fatesWithContinuations = {},
             blacklistedFates= {
-                --"打鼹鼠行动", -- 地形烂，但不至于打不了
+                --"打鼹鼠行动", -- 地形烂，在改良逻辑后能打了
                 "横征暴敛？" -- 存在多个 佩鲁佩鲁族旅行商人 npc，开启DR"自动开始临危受命任务"可以取消这条黑名单（佩鲁佩鲁的旅行商人）
             }
         }
@@ -925,7 +1035,7 @@ FatesData = {
                 "辉鳞族不法之徒袭击事件"
             },
             blacklistedFates= {
-                --"圣树邪魔——坏死花" -- 能打，不清楚为什么原始表格要拉黑名单
+                --"圣树邪魔——坏死花" -- 能打
             }
         }
     },
@@ -974,10 +1084,10 @@ FatesData = {
                 { fateName="机械公敌", continuationIsBoss=false } --已解决地底寻路问题，fatesWithContinuations 表内 fate 打完后会原地等 30 秒等下一个连续的 FATE
             },
             blacklistedFates= {
-                --"亮闪闪的可回收资源", -- 地形问题，非常容易被卡住直到FATE结束或角色死亡
+                --"亮闪闪的可回收资源", -- 地形问题，非常容易被卡住直到FATE结束或角色死亡，改良逻辑后正常了
                 --"养虺成蛇", -- 问题同上
-                --"机械公敌", -- 可能会寻路到地底导致卡死
-                --"基本有害" -- 地形问题，可能会降落在石头上导致寻路卡死
+                --"机械公敌", -- 可能会寻路到地底导致卡死，改良逻辑后正常了
+                --"基本有害" -- 地形问题，可能会降落在石头上卡寻路，改良逻辑后正常了
             }
         }
     },
@@ -1098,7 +1208,7 @@ function SelectNextZone()
         end
     end
     if nextZone == nil then
-        yield("/echo [FATE] 当前区域仅有部分支持，无 NPC 触发型 FATE 数据。")
+        yield("/echo [FATE] 当前地图暂不支持，缺少 NPC FATE 数据。")
         nextZone = {
             zoneName = "",
             zoneId = nextZoneId,
@@ -1113,8 +1223,8 @@ function SelectNextZone()
     end
 
     if nextZone.zoneId == nil then --增加检查 nextZone.zoneId 是否存在，否则 return
-        LogInfo("[FATE] 获取地图ID异常，返回")
-        yield("/e [FATE] 获取地图ID异常，返回")
+        LogInfo("[FATE] 获取地图 ID 异常，返回")
+        yield("/e [FATE] 获取地图 ID 异常，返回")
         return
     end
 
@@ -1337,7 +1447,7 @@ function DistanceFromClosestAetheryteToPoint(x, y, z, teleportTimePenalty)
         end
         local distanceAetheryteToFate = DistanceBetween(aetheryte.x, y, aetheryte.z, x, y, z)
         local comparisonDistance = distanceAetheryteToFate + teleportTimePenalty
-        LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance)) --Bug: aetheryte.aetheryteName 可能是数字或者为空，为什么？
+        LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance)) --Bug: aetheryte.aetheryteName 可能是数字或者为空，为什么会这样？
 
         if comparisonDistance < closestTravelDistance then
             LogInfo("[FATE] Updating closest aetheryte to "..aetheryte.aetheryteName)
@@ -1369,7 +1479,7 @@ end
 function GetClosestAetheryte(x, y, z, teleportTimePenalty)
     if not SelectedZone or not SelectedZone.aetheryteList then
         yield("/e <获取最近水晶> 无地图以太之光信息，返回最大整数值 math.maxinteger")
-        return math.maxinteger  -- 或者返回一个默认值
+        return math.maxinteger  -- 返回默认值
     end
 
 
@@ -1459,8 +1569,9 @@ function AcceptNPCFateOrRejectOtherYesno()
     end
 end
 
--- 只有使用 AEAssist 作为循环才会出现这种问题，因为其他acr脱战不画，AE脱战死也要画完
--- ※如何主动触发传送卡死：使用野菜，然后狂点/tp命令的宏，你就会发现自己没法传送了！
+-- 只有使用 AEAssist 作为循环才会出现这种问题，因为其他acr脱战不画，AE 脱战死也要画完
+-- ※ 如何主动触发传送卡死：使用野菜，然后狂点/tp命令的宏，你就会发现自己没法传送了！
+-- 这个问题目前只会出现在启用 Daily Routines 插件的情况下，禁用时不会发生
 function EscapeTeleportStuckDR()
     --检查 Daily Routines 插件是否启用，如果没有启用则停止循环，有则自动进出本
     if not HasPlugin("DailyRoutines") then
@@ -1482,10 +1593,10 @@ function EscapeTeleportStuckDR()
     end
 end
 
---Fatal Error：/tp 命令发起的传送会忽略动画锁，如果传送在动画锁内发起，极有可能在当前地图永久报错：无法发动传送，其他传送正在进行。
+--这个问题目前只会出现在启用 Daily Routines 插件的情况下，禁用时不会发生
+--/tp 命令发起的传送会忽略动画锁，如果传送在动画锁内发起，极有可能在当前地图永久报错：无法发动传送，其他传送正在进行。
 --这个问题主要发生在使用 AEAssist 循环画家职业在脱战后画画，使用技能的动画锁正好与发起传送时间碰一起了，之后无法在当前地图再次发起传送。
---SND没有相关的逻辑封装来处理这个问题，如果卡传送了，您可以重启游戏、回到标题、进出副本、切换地图来脱困。
---使用 Daily Routines 插件的自动进出副本脱困是最简单的，也是我目前采用的方法，其实我希望不依靠DR脱困，以后再想。
+--SND 没有相关的逻辑封装来处理这个问题，如果卡传送了，重启游戏、回到标题、进出副本、切换地图脱困。
 function TeleportTo(aetheryteName)
     -- 检查 aetheryteName 是否为空，如果为空则重新获取当前地图水晶并退出函数
     if aetheryteName == nil or aetheryteName == "" then
@@ -1501,21 +1612,6 @@ function TeleportTo(aetheryteName)
         LogInfo("[FATE] Too soon since last teleport. Waiting...")
         yield("/wait 5.001")
     end
-
-    --[[if GetCharacterCondition(CharacterCondition.inCombat) then
-        LogInfo("[FATE] 处于战斗状态，中止传送任务")
-        yield("/e [FATE] 处于战斗状态，中止传送任务")
-        return
-    else
-        LogInfo("[FATE] 处于脱战状态，等待1秒后传送") --防止脱战窗口卡传送
-        yield("/e [FATE] 处于脱战状态，等待1秒后传送")
-        yield("/wait 1.001")
-        if GetCharacterCondition(CharacterCondition.inCombat) then
-            LogInfo("[FATE] 冷却后重新进入战斗状态，中止传送任务")
-            yield("/e [FATE] 冷却后重新进入战斗状态，中止传送任务")
-            return
-        end
-    end]]
 
     yield("/tp "..aetheryteName)
     yield("/wait 1") -- wait for casting to begin
@@ -1712,10 +1808,10 @@ function FlyBackToAetheryte()
     end
 end
 
---脚本中只有3处引用，分别是无FATE飞回水晶、移动到FATE、切换分线。移除延迟后也能正常工作，以及异常复位。
+--脚本中只有3处引用，分别是无FATE飞回水晶、移动到FATE、切换分线。取消依旧工作正常。
 function Mount()
     if GetCharacterCondition(CharacterCondition.mounted) then
-        --yield("/wait 1") -- wait a second to make sure you're firmly on the mount 测试必要性，movetofate逻辑自带大约 0.2s + 脚本循环的 0.1s 延迟
+        --yield("/wait 1") -- wait a second to make sure you're firmly on the mount  // movetofate 逻辑自带大约 0.2s + 脚本循环的 0.1s 延迟 取消依旧工作正常
         State = CharacterState.moveToFate
         LogInfo("[FATE] State Change: MoveToFate")
     else
@@ -1725,7 +1821,7 @@ function Mount()
             yield('/mount "' .. MountToUse)
         end
     end
-    --yield("/wait 1") --冷却(默认值1)，似乎是为了防止被重复触发，但似乎不必要。
+    --yield("/wait 1") --冷却(默认值1)，似乎是为了防止被重复触发，取消依旧工作正常
 end
 
 function Dismount()
@@ -1883,13 +1979,11 @@ function MoveToFate()
                     --     LogInfo("[FATE] State Change: MiddleOfFateDismount")
                 end
             else
-                --yield("/wait 1") --冷却 1 秒后再降落，尽量降落在目标附近，根据选中的时间，实际上有很大概率降落在 FATE 中心位置，实测表现还行，最好是与目标为一定距离后再降落，比如5或者10
                 --根据距离判断下坐骑
                 if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) < 5 then --确保 3D 距离小于 5 再下坐骑，这里针对普通 FATE 降落，主要为了防止掉沟里
                     State = CharacterState.middleOfFateDismount
                     LogInfo("[FATE] State Change: MiddleOfFateDismount")
                 end
-                --State = CharacterState.middleOfFateDismount --普通 FATE 有目标时的后续状态。但问题是有可能在 FATE 范围外选中目标，然后降落到 FATE 外，ACR 如果不停的使用技能读条会导致寻路立刻被中止角色动弹不得
             end
             return
         else
@@ -1951,7 +2045,7 @@ function MoveToFate()
         nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(CurrentFate.x, CurrentFate.y, CurrentFate.z, 10)
     end
 
-    --此为旧方法，另外需要评估新方法稳定性
+    --此为旧方法，如果发生了异常就回滚到这个逻辑
     --[[if (GetDistanceToPoint(nearestLandX, nearestLandY, nearestLandZ) > 5 and not GetCharacterCondition(CharacterCondition.flying))  then -- 补充缺失的动作，在寻路到 FATE 前跳跃进入飞行状态，如果没有这一步会导致寻路起点可能在地底一类的异常位置
         yield("/gaction 跳跃")
         yield("/wait 1")
@@ -2062,7 +2156,7 @@ function CollectionsFateTurnIn()
             end
         end
     else
-        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回，7 个物品是最低金牌要求，单人数值的收集任务需要提交 18 个左右完成 
+        if GetItemCount(GetFateEventItem(CurrentFate.fateId)) >= 7 then -- 撤回，7 个物品是最低金牌要求，单人数值的收集任务需要提交大概 18 个左右完成 // 也许应该根据进度决定触发提交物品不会好一点？问题是如何确定角色在对应的收集类FATE已经交了多少个防止溢出，那得新写一个逻辑
             GotCollectionsFullCredit = true
         end
 
@@ -2520,6 +2614,7 @@ function DoFate()
         return
     end
 
+    -- 大幅改动逻辑，我有点看不懂了……
     -- pathfind closer if enemies are too far
     if not GetCharacterCondition(CharacterCondition.inCombat) then --条件：脱战状态
         if HasTarget() then --条件：选中目标
@@ -2537,7 +2632,7 @@ function DoFate()
                     yield("/e [FATE] 看不到目标，尝试寻路修正(脱战)")
                     PathfindAndMoveTo(x, y, z)
                     yield("/wait 1.501")
-                    return --退出函数，否则会陷入无限循环
+                    return --退出函数
                 end
             elseif not (PathfindInProgress() or PathIsRunning()) then --条件：非寻路状态
                 yield("/wait 3.003") -- give 5s for enemy AoE casts to go off before attempting to move closer // change to 3.003s 冷却 3.003 秒
@@ -2573,7 +2668,7 @@ function DoFate()
             yield("/e [FATE] 看不到目标，尝试寻路修正(战斗中)")
             PathfindAndMoveTo(x1, y1, z1)
             yield("/wait 1.501")
-            return --退出函数，否则会陷入无限循环
+            return --退出函数
         elseif HasTarget() and (GetDistanceToTarget() <= (MaxDistance + GetTargetHitboxRadius())) then --有目标，与目标距离在攻击范围内。
             if PathfindInProgress() or PathIsRunning() then --条件：寻路中。任务：中止寻路。
                 yield("/vnav stop")
@@ -2745,7 +2840,7 @@ function HandleDeath()
         yield("/vnav stop")
     end
 
-    if GetCharacterCondition(CharacterCondition.dead) then --Condition Dead
+    --[[if GetCharacterCondition(CharacterCondition.dead) then --Condition Dead
         if Echo and not DeathAnnouncementLock then
             DeathAnnouncementLock = true
             if Echo == "All" then
@@ -2756,6 +2851,36 @@ function HandleDeath()
         if IsAddonVisible("SelectYesno") then --rez addon yes
             yield("/callback SelectYesno true 0")
             yield("/wait 0.1")
+        end
+    else
+        yield("/wait 3") -- 添加延迟，避免执行过快卡死在当前地图
+        State = CharacterState.ready
+        LogInfo("[FATE] State Change: Ready")
+        DeathAnnouncementLock = false
+    end]]
+
+    -- update 2.22.2
+    if GetCharacterCondition(CharacterCondition.dead) then --Condition Dead
+        if ReturnOnDeath then
+            if Echo and not DeathAnnouncementLock then
+                DeathAnnouncementLock = true
+                if Echo == "All" then
+                    yield("/echo [FATE] 您陷入了无法战斗的状态，返回到登记的以太之光。")
+                end
+            end
+
+            if IsAddonVisible("SelectYesno") then --rez addon yes
+                yield("/callback SelectYesno true 0")
+                yield("/wait 0.1")
+            end
+        else
+            if Echo and not DeathAnnouncementLock then
+                DeathAnnouncementLock = true
+                if Echo == "All" then
+                    yield("/echo [FATE] 您陷入了无法战斗的状态，正在等待脚本重新检测到角色复活...")
+                end
+            end
+            yield("/wait 1")
         end
     else
         yield("/wait 3") -- 添加延迟，避免执行过快卡死在当前地图
